@@ -459,6 +459,9 @@ dependencies = [
 [[package]]
 name = "loader"
 version = "0.1.0"
+dependencies = [
+ "sha2 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "lock_api"
@@ -902,6 +905,7 @@ version = "0.1.0"
 dependencies = [
  "diesel 1.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "diesel_migrations 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "rocket 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "rocket_contrib 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.125 (registry+https://github.com/rust-lang/crates.io-index)",
