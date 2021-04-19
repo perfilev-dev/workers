@@ -13,24 +13,60 @@ use rocket_contrib::json::{Json, JsonValue};
 use heartbeat::Heartbeat;
 use challenge::Challenge;
 use std::net::SocketAddr;
+use rocket::Request;
+use serde::{Deserialize, Serialize};
 
 #[database("sqlite_database")]
 pub struct DbConn(diesel::SqliteConnection);
+
+#[derive(Deserialize, Serialize)]
+struct ChallengeData {
+    bytes: String,
+    nonce: i32
+}
+
+#[derive(Deserialize)]
+struct RegisterRequest {
+    challenge: ChallengeData,
+    solution: i32
+}
 
 
 #[get("/challenge")]
 fn get_challenge(remote_addr: SocketAddr, con: DbConn) -> JsonValue {
     let ip = remote_addr.ip().to_string();
 
+    // todo: add flock here by ip address
     if Challenge::count_by_ip(&ip, &con).unwrap() > 1000 {
         Challenge::remove_first_with_ip(&ip, &con);
     }
 
     let challenge = Challenge::new(&remote_addr.ip().to_string());
 
-    let challenges = Challenge::all(&con).unwrap();
+    // save to db!
+    Challenge::insert(challenge.clone(), &con);
 
-    json!({"status": "ok", "challenge": challenge, "challenges": challenges})
+    json!({"status": "ok", "challenge": ChallengeData {
+        bytes: challenge.bytes,
+        nonce: challenge.nonce
+    }})
+}
+
+
+#[post("/register", format = "json", data = "<req>")]
+fn register(req: Json<RegisterRequest>, remote_addr: SocketAddr, con: DbConn) -> JsonValue {
+    match Challenge::pop_by_bytes(&req.challenge.bytes, &con) {
+        Ok(challenge) => {
+            if !challenge.check(req.solution) {
+                return json!({"status": "error", "error": "wrong solution"});
+            }
+
+            // todo: generate some token!
+
+            json!({"status": "ok", "token": "BLABLABLA"})
+        },
+        Err(err) => json!({"status": "error", "error": err.to_string()})
+    }
 }
 
 
@@ -55,6 +91,7 @@ fn main() {
         .attach(DbConn::fairing())
         .mount("/", routes![
             get_challenge,
+            register,
             heartbeats,
             heartbeat
         ])

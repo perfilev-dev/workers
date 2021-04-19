@@ -910,6 +910,7 @@ dependencies = [
  "rocket_contrib 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.125 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.64 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sha2 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
