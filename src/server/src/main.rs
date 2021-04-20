@@ -22,7 +22,9 @@ use shared::{challenge::Challenge, api::*};
 use expiring::ExpiringData;
 use std::time::Duration;
 use rocket::response::status::BadRequest;
-use std::process::exit;
+use std::thread;
+use rocket::fairing::AdHoc;
+use std::thread::sleep;
 
 #[database("sqlite_database")]
 pub struct DbConn(diesel::SqliteConnection);
@@ -67,12 +69,12 @@ fn register(req: Json<RegisterParameters>, remote_addr: SocketAddr, con: DbConn)
         return Err(BadRequest(Some("used".to_string())));
     }
 
-    // put token to db with expiration time!
-    Token::insert(Token::new(&expiring.data, expiring.expires_on), &con)
-        .map_err(|e| BadRequest(Some(e.to_string())))?;
-
     // verify solution!
     let challenge : Challenge = serde_json::from_str(&expiring.data)
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    // put token to db with expiration time!
+    Token::insert(Token::new(&challenge.bytes, expiring.expires_on), &con)
         .map_err(|e| BadRequest(Some(e.to_string())))?;
 
     if !challenge.check(req.solution) {
@@ -117,6 +119,18 @@ fn heartbeat(hb: Json<Heartbeat>, con: DbConn) -> JsonValue {
 fn main() {
     rocket::ignite()
         .attach(DbConn::fairing())
+        .attach(AdHoc::on_launch("Token Cleaner", |r| {
+            let con = DbConn::get_one(r).unwrap();
+
+            thread::spawn(move || {
+                loop {
+                    sleep(Duration::from_secs(5));
+                    if let Err(err) = Token::remove_old(&con) {
+                        println!("Unable to remove old tokens: {}", err.to_string());
+                    }
+                }
+            });
+        }))
         .mount("/", routes![
             get_challenge,
             register,
