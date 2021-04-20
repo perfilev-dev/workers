@@ -1,8 +1,6 @@
 use crate::challenge::Challenge;
 use serde::{Serialize, Deserialize};
 
-#[derive(Deserialize, Serialize)]
-pub struct ErrorResponse(pub String);
 
 #[derive(Deserialize, Serialize)]
 pub struct ChallengeResponse {
