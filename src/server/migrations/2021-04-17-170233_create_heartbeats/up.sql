@@ -1,8 +1,7 @@
-CREATE TABLE challenges (
+CREATE TABLE tokens (
    id INTEGER NOT NULL PRIMARY KEY,
-   ip VARCHAR(16) NOT NULL,
-   bytes VARCHAR(32) NOT NULL,
-   nonce INTEGER NOT NULL
+   token VARCHAR(32) NOT NULL UNIQUE,
+   expires_on INTEGER NOT NULL
 );
 
 CREATE TABLE heartbeats (
