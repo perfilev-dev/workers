@@ -3,5 +3,6 @@ members = [
     "src/client",
     "src/controller",
     "src/loader",
-    "src/server"
+    "src/server",
+    "src/shared"
 ]
