@@ -36,4 +36,14 @@ impl Challenge {
         }
     }
 
+    pub fn solve(&self) -> i32 {
+        let mut i = 0;
+        loop {
+            if self.check(i) {
+                return i;
+            }
+            i += 1;
+        }
+    }
+
 }
