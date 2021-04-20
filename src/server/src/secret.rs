@@ -2,7 +2,7 @@ use rand::rngs::OsRng;
 use std::sync::Mutex;
 
 use rsa::{PublicKey, RSAPrivateKey, RSAPublicKey, PaddingScheme};
-use serde::{Serialize, Deserialize};
+use serde::Serialize;
 use serde::de::DeserializeOwned;
 
 use crate::error::*;

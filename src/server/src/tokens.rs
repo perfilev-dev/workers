@@ -4,8 +4,16 @@ use serde::{Serialize, Deserialize};
 use crate::schema::tokens;
 use crate::schema::tokens::dsl::{tokens as all_tokens};
 
-use crate::DbConn;
-use std::time::{SystemTime, UNIX_EPOCH};
+use crate::{DbConn, secret};
+use std::time::{SystemTime, UNIX_EPOCH, Duration};
+use rocket::fairing::{Fairing, Info, Kind};
+use rocket::{Rocket, Request, Data};
+use std::thread;
+use std::thread::sleep;
+use crate::expiring::ExpiringData;
+use rocket::http::uri::Origin;
+use rocket::http::Method;
+use std::sync::{Mutex, Arc};
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Clone)]
 #[table_name="tokens"]
@@ -38,4 +46,70 @@ impl Token {
         diesel::delete(all_tokens.filter(tokens::expires_on.le(current))).execute(&conn.0)
     }
 
+}
+
+
+pub struct TokenFairing {
+    con: Arc<Mutex<Option<DbConn>>>
+}
+
+impl TokenFairing {
+    pub fn new() -> TokenFairing {
+        TokenFairing {
+            con: Arc::new(Mutex::new(None))
+        }
+    }
+}
+
+impl Fairing for TokenFairing {
+
+    fn info(&self) -> Info {
+        Info {
+            name: "TokenFairing",
+            kind: Kind::Launch | Kind::Request
+        }
+    }
+
+    fn on_launch(&self, r: &Rocket) {
+        *self.con.lock().unwrap() = Some(DbConn::get_one(r).unwrap());
+
+        let con = self.con.clone();
+        thread::spawn(move || {
+            loop {
+                sleep(Duration::from_secs(5));
+                let con = con.lock().unwrap();
+                if let Some(c) = con.as_ref() {
+                    if let Err(err) = Token::remove_old(c) {
+                        println!("Unable to remove old tokens: {}", err.to_string());
+                    }
+                }
+            }
+        });
+    }
+
+    fn on_request<'r>(&self, r: &mut Request<'r>, _: &Data) {
+        if r.uri().path().starts_with("/w/") {
+
+            // check `token` from headers (not expired, not revoked)
+            if let Some(token) = r.headers().get("token").last() {
+                if let Ok(e) = secret::decrypt::<ExpiringData>(token) {
+                    let con = self.con.lock().unwrap();
+                    if !e.is_expired() {
+                        if let Some(c) = con.as_ref() {
+                            if Token::find(&e.data, c).unwrap_or(1) < 1 {
+                                return; // not expired and not revoked!
+                            }
+                        }
+                    }
+                }
+            }
+
+            r.set_uri(Origin::parse("/error?message=register%20needed").unwrap());
+            r.set_method(Method::Get)
+        }
+        else if r.uri().path().starts_with("/error") {
+            r.set_uri(Origin::parse("/not_found").unwrap());
+            r.set_method(Method::Get)
+        }
+    }
 }

@@ -16,22 +16,22 @@ mod tokens;
 use rocket_contrib::json::{Json, JsonValue};
 use heartbeat::Heartbeat;
 use tokens::Token;
-use std::net::SocketAddr;
-use serde::{Deserialize, Serialize};
 use shared::{challenge::Challenge, api::*};
 use expiring::ExpiringData;
 use std::time::Duration;
 use rocket::response::status::BadRequest;
-use std::thread;
-use rocket::fairing::AdHoc;
-use std::thread::sleep;
+use tokens::TokenFairing;
 
 #[database("sqlite_database")]
 pub struct DbConn(diesel::SqliteConnection);
 
 
+///
+/// Registering: get challenge, solve, send solution!
+///
+
 #[get("/challenge")]
-fn get_challenge() -> Json<ChallengeResponse> {
+fn challenge() -> Json<ChallengeResponse> {
     let challenge = Challenge::new();
     let serialized = serde_json::to_string(&challenge).unwrap();
 
@@ -50,9 +50,8 @@ fn get_challenge() -> Json<ChallengeResponse> {
     Json(ChallengeResponse { challenge, token })
 }
 
-
 #[post("/register", format = "json", data = "<req>")]
-fn register(req: Json<RegisterParameters>, remote_addr: SocketAddr, con: DbConn) -> Result<Json<RegisterResponse>, BadRequest<String>> {
+fn register(req: Json<RegisterParameters>, con: DbConn) -> Result<Json<RegisterResponse>, BadRequest<String>> {
     let expiring = secret::decrypt::<ExpiringData>(&req.token)
         .map_err(|e| BadRequest(Some(e.to_string())))?;
 
@@ -91,23 +90,18 @@ fn register(req: Json<RegisterParameters>, remote_addr: SocketAddr, con: DbConn)
 
     // all's ok, generate token and encrypt it
     let expiring2 = ExpiringData::new(&Challenge::new().bytes, ttl);
-    let token = secret::encrypt(expiring)
+    let token = secret::encrypt(expiring2)
         .map_err(|e| BadRequest(Some(e.to_string())))?;
 
     Ok(Json(RegisterResponse { token }))
 }
 
 
-#[get("/heartbeats")]
-fn heartbeats(con: DbConn) -> JsonValue {
-    match Heartbeat::all(con) {
-        Ok(heartbeats) => json!({"status": "ok", "heartbeats": heartbeats}),
-        Err(err) => json!({"status": "error", "error": err.to_string()})
-    }
-}
+///
+/// Workers method, that requires token!
+///
 
-
-#[post("/heartbeat", format = "json", data = "<hb>")]
+#[post("/w/heartbeat", format = "json", data = "<hb>")]
 fn heartbeat(hb: Json<Heartbeat>, con: DbConn) -> JsonValue {
     match Heartbeat::insert(hb.0, con) {
         Ok(s) => json!({"status": "ok", "size": s}),
@@ -116,26 +110,39 @@ fn heartbeat(hb: Json<Heartbeat>, con: DbConn) -> JsonValue {
 }
 
 
+///
+/// Controllers method, auth by PKI! TODO
+///
+
+#[get("/c/heartbeats")]
+fn heartbeats(con: DbConn) -> JsonValue {
+    match Heartbeat::all(con) {
+        Ok(heartbeats) => json!({"status": "ok", "heartbeats": heartbeats}),
+        Err(err) => json!({"status": "error", "error": err.to_string()})
+    }
+}
+
+
+///
+/// Service methods, not exposed! Only for redirects
+///
+
+#[get("/error?<message>")]
+fn error(message: String) -> BadRequest<String> {
+    BadRequest(Some(message))
+}
+
+
 fn main() {
     rocket::ignite()
         .attach(DbConn::fairing())
-        .attach(AdHoc::on_launch("Token Cleaner", |r| {
-            let con = DbConn::get_one(r).unwrap();
-
-            thread::spawn(move || {
-                loop {
-                    sleep(Duration::from_secs(5));
-                    if let Err(err) = Token::remove_old(&con) {
-                        println!("Unable to remove old tokens: {}", err.to_string());
-                    }
-                }
-            });
-        }))
+        .attach(TokenFairing::new())
         .mount("/", routes![
-            get_challenge,
+            challenge,
             register,
             heartbeats,
-            heartbeat
+            heartbeat,
+            error
         ])
         .launch();
 }
