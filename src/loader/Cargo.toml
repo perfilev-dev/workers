@@ -10,3 +10,4 @@ edition = "2018"
 sha2 = "0.9.3"
 serde = { version = "1.0", features = ["derive"] }
 reqwest ={version = "0.11.3", features = ["blocking", "json"]}
+shared = { path="../shared" }
