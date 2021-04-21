@@ -3,7 +3,11 @@ use std::str::FromStr;
 use serde::{Serialize, Deserialize};
 use std::mem::swap;
 use reqwest::StatusCode;
-use shared::{challenge::Challenge, api::*};
+use shared::{challenge::Challenge, api::*, utils::sha256};
+use sha2::digest::Reset;
+use std::fs;
+use std::fs::{File, read};
+use std::io::Write;
 
 struct ApiServer {
 
@@ -44,6 +48,20 @@ impl ApiServer {
     }
 
 
+
+
+    pub fn client_download(&self) -> Result<UploadParameters, reqwest::Error> {
+
+        let client = reqwest::blocking::Client::new();
+
+        let resp = client.get( format!("{}/w/client/download", &self.ip_address))
+            .header("token", &self.token)
+            .send();
+
+        resp?.json()
+
+    }
+
 }
 
 fn main() {
@@ -55,9 +73,18 @@ fn main() {
     let solution = challenge_response.challenge.solve();
     api_server.token = api_server.register(challenge_response, solution).unwrap().token;
 
+    let upload = api_server.client_download().unwrap();
 
-    let a = 3;
+    save(upload);
 
     return;
 }
 
+fn save (upload : UploadParameters) {
+
+    let bytes = base64::decode(&upload.base64).unwrap();
+    let digest = hex::encode(sha256(&bytes));
+    let mut file = File::create(&digest).unwrap();
+    file.write_all(&bytes).unwrap();
+
+}
