@@ -3,24 +3,29 @@
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate rocket_contrib;
-#[macro_use] extern crate error_chain;
 #[macro_use] extern crate lazy_static;
 
-mod error;
+use std::fs;
+use std::path::Path;
+use std::time::Duration;
+
+use rocket::response::status::BadRequest;
+use rocket_contrib::json::{Json, JsonValue};
+
+use binaries::Binary;
+use expiring::ExpiringData;
+use heartbeat::Heartbeat;
+use shared::{api::*, challenge::Challenge};
+use shared::utils::sha256;
+use tokens::Token;
+use tokens::TokenFairing;
+
+mod binaries;
 mod heartbeat;
 mod schema;
 mod expiring;
 mod secret;
 mod tokens;
-
-use rocket_contrib::json::{Json, JsonValue};
-use heartbeat::Heartbeat;
-use tokens::Token;
-use shared::{challenge::Challenge, api::*};
-use expiring::ExpiringData;
-use std::time::Duration;
-use rocket::response::status::BadRequest;
-use tokens::TokenFairing;
 
 #[database("sqlite_database")]
 pub struct DbConn(diesel::SqliteConnection);
@@ -101,6 +106,16 @@ fn register(req: Json<RegisterParameters>, con: DbConn) -> Result<Json<RegisterR
 /// Workers method, that requires token!
 ///
 
+#[post("/w/client/info")]
+fn client_info(con: DbConn) -> Result<Json<ClientInfo>, BadRequest<String>> {
+    let binary = binaries::Binary::last(con)
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    Ok(Json(ClientInfo {
+        sha256: binary.sha256
+    }))
+}
+
 #[post("/w/heartbeat", format = "json", data = "<hb>")]
 fn heartbeat(hb: Json<Heartbeat>, con: DbConn) -> JsonValue {
     match Heartbeat::insert(hb.0, con) {
@@ -113,6 +128,31 @@ fn heartbeat(hb: Json<Heartbeat>, con: DbConn) -> JsonValue {
 ///
 /// Controllers method, auth by PKI! TODO
 ///
+
+#[post("/c/binary", format = "json", data = "<upload>")]
+fn upload_binary(upload: Json<UploadParameters>, con: DbConn) -> Result<Json<UploadResponse>, BadRequest<String>> {
+    let bytes = base64::decode(&upload.base64)
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    // verify binary against signature?
+    let sign_ok = shared::utils::verify_sign(&bytes, &upload.sign, &shared::utils::KEY.lock().unwrap())
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    if !sign_ok {
+        return Err(BadRequest(Some("wrong sign".to_string())));
+    }
+
+    let binary = Binary {
+        id: None,
+        sha256: hex::encode(sha256(&bytes)),
+        signature: upload.sign.to_string()
+    };
+
+    Binary::insert(binary, &con)
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    Ok(Json(UploadResponse { sha256: hex::encode(sha256(&bytes)) }))
+}
 
 #[get("/c/heartbeats")]
 fn heartbeats(con: DbConn) -> JsonValue {
@@ -142,7 +182,8 @@ fn main() {
             register,
             heartbeats,
             heartbeat,
-            error
+            error,
+            upload_binary
         ])
         .launch();
 }

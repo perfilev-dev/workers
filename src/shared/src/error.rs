@@ -26,5 +26,6 @@ error_chain! {
         Utf8Error(::std::string::FromUtf8Error);
         Base64Error(::base64::DecodeError);
         RsaError(::rsa::errors::Error);
+        IoError(::std::io::Error);
     }
 }

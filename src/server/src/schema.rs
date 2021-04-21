@@ -1,4 +1,12 @@
 table! {
+    binaries (id) {
+        id -> Nullable<Integer>,
+        sha256 -> Text,
+        signature -> Text,
+    }
+}
+
+table! {
     heartbeats (id) {
         id -> Nullable<Integer>,
         cpu_usage -> Float,
@@ -19,6 +27,7 @@ table! {
 }
 
 allow_tables_to_appear_in_same_query!(
+    binaries,
     heartbeats,
     tokens,
 );
