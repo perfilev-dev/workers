@@ -65,22 +65,23 @@ fn register(req: Json<RegisterParameters>, con: DbConn) -> Result<Json<RegisterR
         return Err(BadRequest(Some("expired".to_string())));
     }
 
+    // extract challenge
+    let challenge : Challenge = serde_json::from_str(&expiring.data)
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
     // check token in db with expiration time!
-    let count = Token::find(&expiring.data, &con)
+    let count = Token::find(&challenge.bytes, &con)
         .map_err(|e| BadRequest(Some(e.to_string())))?;
 
     if count > 0 {
         return Err(BadRequest(Some("used".to_string())));
     }
 
-    // verify solution!
-    let challenge : Challenge = serde_json::from_str(&expiring.data)
-        .map_err(|e| BadRequest(Some(e.to_string())))?;
-
     // put token to db with expiration time!
     Token::insert(Token::new(&challenge.bytes, expiring.expires_on), &con)
         .map_err(|e| BadRequest(Some(e.to_string())))?;
 
+    // and check solution!
     if !challenge.check(req.solution) {
         return Err(BadRequest(Some("bad solution".to_string())));
     }
