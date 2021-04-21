@@ -13,3 +13,9 @@ CREATE TABLE heartbeats (
     client_timestamp INTEGER NOT NULL,
     server_timestamp INTEGER NOT NULL
 );
+
+CREATE TABLE binaries (
+    id INTEGER NOT NULL PRIMARY KEY,
+    sha256 VARCHAR(64) NOT NULL UNIQUE,
+    signature VARCHAR(1024) NOT NULL UNIQUE
+)

@@ -3,24 +3,31 @@
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate rocket_contrib;
-#[macro_use] extern crate error_chain;
 #[macro_use] extern crate lazy_static;
 
-mod error;
+use std::fs;
+use std::path::Path;
+use std::time::Duration;
+
+use rocket::response::status::BadRequest;
+use rocket_contrib::json::{Json, JsonValue};
+
+use binaries::Binary;
+use expiring::ExpiringData;
+use heartbeat::Heartbeat;
+use shared::{api::*, challenge::Challenge};
+use shared::utils::sha256;
+use tokens::Token;
+use tokens::TokenFairing;
+use std::fs::{File, read};
+use std::io::Write;
+
+mod binaries;
 mod heartbeat;
 mod schema;
 mod expiring;
 mod secret;
 mod tokens;
-
-use rocket_contrib::json::{Json, JsonValue};
-use heartbeat::Heartbeat;
-use tokens::Token;
-use shared::{challenge::Challenge, api::*};
-use expiring::ExpiringData;
-use std::time::Duration;
-use rocket::response::status::BadRequest;
-use tokens::TokenFairing;
 
 #[database("sqlite_database")]
 pub struct DbConn(diesel::SqliteConnection);
@@ -60,22 +67,23 @@ fn register(req: Json<RegisterParameters>, con: DbConn) -> Result<Json<RegisterR
         return Err(BadRequest(Some("expired".to_string())));
     }
 
+    // extract challenge
+    let challenge : Challenge = serde_json::from_str(&expiring.data)
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
     // check token in db with expiration time!
-    let count = Token::find(&expiring.data, &con)
+    let count = Token::find(&challenge.bytes, &con)
         .map_err(|e| BadRequest(Some(e.to_string())))?;
 
     if count > 0 {
         return Err(BadRequest(Some("used".to_string())));
     }
 
-    // verify solution!
-    let challenge : Challenge = serde_json::from_str(&expiring.data)
-        .map_err(|e| BadRequest(Some(e.to_string())))?;
-
     // put token to db with expiration time!
     Token::insert(Token::new(&challenge.bytes, expiring.expires_on), &con)
         .map_err(|e| BadRequest(Some(e.to_string())))?;
 
+    // and check solution!
     if !challenge.check(req.solution) {
         return Err(BadRequest(Some("bad solution".to_string())));
     }
@@ -101,6 +109,30 @@ fn register(req: Json<RegisterParameters>, con: DbConn) -> Result<Json<RegisterR
 /// Workers method, that requires token!
 ///
 
+#[get("/w/client/info")]
+fn client_info(con: DbConn) -> Result<Json<ClientInfo>, BadRequest<String>> {
+    let binary = binaries::Binary::last(con)
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    Ok(Json(ClientInfo {
+        sha256: binary.sha256
+    }))
+}
+
+#[get("/w/client/download")]
+fn client_download(con: DbConn) -> Result<Json<UploadParameters>, BadRequest<String>> {
+    let binary = binaries::Binary::last(con)
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    let bytes = read(binary.sha256)
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    Ok(Json(UploadParameters {
+        base64: base64::encode(&bytes),
+        sign: binary.signature
+    }))
+}
+
 #[post("/w/heartbeat", format = "json", data = "<hb>")]
 fn heartbeat(hb: Json<Heartbeat>, con: DbConn) -> JsonValue {
     match Heartbeat::insert(hb.0, con) {
@@ -113,6 +145,37 @@ fn heartbeat(hb: Json<Heartbeat>, con: DbConn) -> JsonValue {
 ///
 /// Controllers method, auth by PKI! TODO
 ///
+
+#[post("/c/binary", format = "json", data = "<upload>")]
+fn upload_binary(upload: Json<UploadParameters>, con: DbConn) -> Result<Json<UploadResponse>, BadRequest<String>> {
+    let bytes = base64::decode(&upload.base64)
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    // verify binary against signature?
+    let sign_ok = shared::utils::verify_sign(&bytes, &upload.sign, &shared::utils::KEY.lock().unwrap())
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    if !sign_ok {
+        return Err(BadRequest(Some("wrong sign".to_string())));
+    }
+
+    let digest = hex::encode(sha256(&bytes));
+    let binary = Binary {
+        id: None,
+        sha256: digest.to_string(),
+        signature: upload.sign.to_string()
+    };
+
+    // store in db...
+    Binary::insert(binary, &con)
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    // also on fs by hash.
+    let mut file = File::create(&digest).unwrap();
+    file.write_all(&bytes).unwrap();
+
+    Ok(Json(UploadResponse { sha256: digest }))
+}
 
 #[get("/c/heartbeats")]
 fn heartbeats(con: DbConn) -> JsonValue {
@@ -142,7 +205,10 @@ fn main() {
             register,
             heartbeats,
             heartbeat,
-            error
+            error,
+            upload_binary,
+            client_info,
+            client_download
         ])
         .launch();
 }

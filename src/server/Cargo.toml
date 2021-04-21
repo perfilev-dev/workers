@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 base64 = "0.13.0"
 error-chain = "0.12.4"
+hex = "0.3.0"
 lazy_static = "1.4.0"
 rocket = "0.4.7"
 serde = { version = "1.0", features = ["derive"] }

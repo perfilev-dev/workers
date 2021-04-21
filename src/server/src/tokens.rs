@@ -33,8 +33,8 @@ impl Token {
         }
     }
 
-    pub fn find(token: &str, conn: &DbConn) -> QueryResult<usize> {
-        all_tokens.filter(tokens::token.eq(token)).execute(&conn.0)
+    pub fn find(token: &str, conn: &DbConn) -> QueryResult<i64> {
+        all_tokens.filter(tokens::token.eq(token)).count().get_result(&conn.0)
     }
 
     pub fn insert(token: Token, conn: &DbConn) -> QueryResult<usize> {
