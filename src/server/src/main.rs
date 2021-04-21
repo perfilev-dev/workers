@@ -19,6 +19,8 @@ use shared::{api::*, challenge::Challenge};
 use shared::utils::sha256;
 use tokens::Token;
 use tokens::TokenFairing;
+use std::fs::{File, read};
+use std::io::Write;
 
 mod binaries;
 mod heartbeat;
@@ -107,13 +109,27 @@ fn register(req: Json<RegisterParameters>, con: DbConn) -> Result<Json<RegisterR
 /// Workers method, that requires token!
 ///
 
-#[post("/w/client/info")]
+#[get("/w/client/info")]
 fn client_info(con: DbConn) -> Result<Json<ClientInfo>, BadRequest<String>> {
     let binary = binaries::Binary::last(con)
         .map_err(|e| BadRequest(Some(e.to_string())))?;
 
     Ok(Json(ClientInfo {
         sha256: binary.sha256
+    }))
+}
+
+#[get("/w/client/download")]
+fn client_download(con: DbConn) -> Result<Json<UploadParameters>, BadRequest<String>> {
+    let binary = binaries::Binary::last(con)
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    let bytes = read(binary.sha256)
+        .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    Ok(Json(UploadParameters {
+        base64: base64::encode(&bytes),
+        sign: binary.signature
     }))
 }
 
@@ -143,16 +159,22 @@ fn upload_binary(upload: Json<UploadParameters>, con: DbConn) -> Result<Json<Upl
         return Err(BadRequest(Some("wrong sign".to_string())));
     }
 
+    let digest = hex::encode(sha256(&bytes));
     let binary = Binary {
         id: None,
-        sha256: hex::encode(sha256(&bytes)),
+        sha256: digest.to_string(),
         signature: upload.sign.to_string()
     };
 
+    // store in db...
     Binary::insert(binary, &con)
         .map_err(|e| BadRequest(Some(e.to_string())))?;
 
-    Ok(Json(UploadResponse { sha256: hex::encode(sha256(&bytes)) }))
+    // also on fs by hash.
+    let mut file = File::create(&digest).unwrap();
+    file.write_all(&bytes).unwrap();
+
+    Ok(Json(UploadResponse { sha256: digest }))
 }
 
 #[get("/c/heartbeats")]
@@ -184,7 +206,9 @@ fn main() {
             heartbeats,
             heartbeat,
             error,
-            upload_binary
+            upload_binary,
+            client_info,
+            client_download
         ])
         .launch();
 }

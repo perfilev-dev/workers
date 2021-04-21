@@ -1,3 +1,4 @@
+mod host;
 mod pki;
 
 use clap::{AppSettings, Clap};
@@ -14,6 +15,7 @@ struct Opts {
 
 #[derive(Clap)]
 enum SubCommand {
+    Host(host::Host),
     Pki(pki::Pki)
 }
 
@@ -31,6 +33,7 @@ fn main() {
     // }
 
     match opts.subcmd {
+        SubCommand::Host(host) => host::process(host),
         SubCommand::Pki(command) => pki::process(command)
     }
 

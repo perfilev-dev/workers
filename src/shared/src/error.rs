@@ -27,5 +27,6 @@ error_chain! {
         Base64Error(::base64::DecodeError);
         RsaError(::rsa::errors::Error);
         IoError(::std::io::Error);
+        ReqwestError(::reqwest::Error);
     }
 }
