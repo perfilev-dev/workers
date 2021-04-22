@@ -1,38 +1,46 @@
 use sha2::{Sha256, Sha512, Digest};
+use std::str::FromStr;
+use serde::{Serialize, Deserialize};
+use std::mem::swap;
+use reqwest::StatusCode;
+use shared::{challenge::Challenge, api::*, utils::sha256};
+use sha2::digest::Reset;
+use std::fs;
+use std::fs::{File, read};
+use std::io::Write;
+
 
 fn main() {
-    let find = b"\xAB\xAB\xAB\xAB";
-    let s64 = b"sha256 ends with AA:AA:AA:AA if ";
 
-    println!("{}", u32::from_be_bytes(find.to_owned()));
+
+    let mut api_client = Api::new("localhost", 8000, false);
+
+    let challenge_response = api_client.get_challenge().unwrap();
+    let solution = challenge_response.challenge.solve();
+    api_client.token = api_client.register(challenge_response, solution).unwrap().token;
+
+    let upload = api_client.client_download().unwrap();
+
+    save(upload);
 
     return;
+}
 
-    let mut i = 0;
-    loop {
+fn save (upload : UploadParameters) {
 
-        // create a Sha256 object
-        let mut hasher = Sha256::new();
+    let bytes = base64::decode(&upload.base64).unwrap();
 
-        // write input message
-        hasher.update(s64);
+    // verify binary against signature?
+    let sign_ok = shared::utils::verify_sign(&bytes, &upload.sign, &shared::utils::KEY.lock().unwrap()).unwrap();
 
-        // ...
-        hasher.update(i32::to_be_bytes(i));
-
-        // ...
-        let result = hasher.finalize();
-
-        // ...
-        if result.ends_with(find) {
-            println!("found for {} retries! sha256({:?} + {:?}) endswith BB:BB:BB:BB", i, s64, i32::to_be_bytes(i));
-            break;
-        }
-
-        if i % 10_000_000 == 0 {
-            println!("{}", i);
-        }
-
-        i += 1;
+    if !sign_ok {
+        return panic!();
     }
+
+
+    // save binary
+    let digest = hex::encode(sha256(&bytes));
+    let mut file = File::create(format!("{}.exe", &digest)).unwrap();
+    file.write_all(&bytes).unwrap();
+
 }

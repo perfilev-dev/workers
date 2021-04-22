@@ -17,7 +17,7 @@ pub struct Binary {
 impl Binary {
 
     pub fn last(conn: DbConn) -> QueryResult<Binary> {
-        all_binaries.order_by(binaries::id).first(&conn.0)
+        all_binaries.order_by(binaries::id.desc()).first(&conn.0)
     }
 
     pub fn insert(binary: Binary, conn: &DbConn) -> QueryResult<usize> {
