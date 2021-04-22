@@ -41,13 +41,41 @@ pub struct Api {
     host: String,
     port: usize,
     secure: bool,
-    client: Client
+    client: Client,
+    pub token: String
 }
 
 impl Api {
 
     pub fn new(host: &str, port: usize, secure: bool) -> Api {
-        Api { host: host.to_string(), port, secure, client: Client::new() }
+        Api { host: host.to_string(), port, secure, client: Client::new(), token: "".to_string() }
+    }
+
+    pub fn client_download(&self) -> Result<UploadParameters> {
+        Ok(self.client.get(&self.url("/w/client/download"))
+            .header("token", &self.token)
+            .send()?
+            .json()?)
+    }
+
+    pub fn get_challenge(&self) -> Result<ChallengeResponse> {
+
+        Ok(self.client.get(&self.url("/challenge"))
+            .send()?
+            .json()?)
+
+    }
+
+    pub fn register(&self, challenge_response: ChallengeResponse, solution: i32) -> Result<RegisterResponse> {
+        let register_request = RegisterParameters {
+            token: challenge_response.token,
+            solution
+        };
+
+        Ok(self.client.post(&self.url("/register"))
+            .json(&register_request)
+            .send()?
+            .json()?)
     }
 
     pub fn upload_binary(&self, parameters: UploadParameters) -> Result<UploadResponse> {
