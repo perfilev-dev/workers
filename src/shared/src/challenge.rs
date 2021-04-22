@@ -1,17 +1,15 @@
-use rand::{thread_rng, Rng, RngCore};
 use rand::distributions::Alphanumeric;
-use serde::{Serialize, Deserialize};
-use sha2::{Sha256, Digest};
-
+use rand::{thread_rng, Rng, RngCore};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 #[derive(Serialize, Deserialize)]
 pub struct Challenge {
     pub bytes: String,
-    pub nonce: i32
+    pub nonce: i32,
 }
 
 impl Challenge {
-
     pub fn new() -> Challenge {
         Challenge {
             nonce: thread_rng().next_u32() as i32,
@@ -19,7 +17,7 @@ impl Challenge {
                 .sample_iter(&Alphanumeric)
                 .take(32)
                 .map(char::from)
-                .collect()
+                .collect(),
         }
     }
 
@@ -30,8 +28,7 @@ impl Challenge {
         let result = hasher.finalize();
         if cfg!(debug_assertions) {
             result.ends_with(&i8::to_be_bytes(self.nonce as i8))
-        }
-        else {
+        } else {
             result.ends_with(&i32::to_be_bytes(self.nonce))
         }
     }
@@ -45,5 +42,4 @@ impl Challenge {
             i += 1;
         }
     }
-
 }

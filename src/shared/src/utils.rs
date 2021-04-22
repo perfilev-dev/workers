@@ -2,9 +2,9 @@ use std::fs::read;
 use std::sync::Mutex;
 
 use rand::rngs::OsRng;
-use sha2::{Sha256, Digest};
-use rsa::{RSAPublicKey, RSAPrivateKey, PaddingScheme, PublicKey};
-use serde::{Serialize, de::DeserializeOwned};
+use rsa::{PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey};
+use serde::{de::DeserializeOwned, Serialize};
+use sha2::{Digest, Sha256};
 
 use crate::error::*;
 
@@ -60,17 +60,23 @@ pub fn sha256(bytes: &[u8]) -> Vec<u8> {
     hasher.finalize().to_vec()
 }
 
-pub fn encrypt<T>(data: T, pub_key: &RSAPublicKey) -> Result<String>  where T: Serialize {
+pub fn encrypt<T>(data: T, pub_key: &RSAPublicKey) -> Result<String>
+where
+    T: Serialize,
+{
     let serialized = serde_json::to_string(&data)?;
     let padding = PaddingScheme::new_pkcs1v15_encrypt();
     let encrypted = pub_key.encrypt(&mut OsRng, padding, serialized.as_bytes())?;
     Ok(base64::encode(encrypted))
 }
 
-pub fn decrypt<T>(data: &str, private_key: &RSAPrivateKey) -> Result<T> where T: DeserializeOwned {
+pub fn decrypt<T>(data: &str, private_key: &RSAPrivateKey) -> Result<T>
+where
+    T: DeserializeOwned,
+{
     let decoded = base64::decode(data)?;
     let padding = PaddingScheme::new_pkcs1v15_encrypt();
-    let decrypted =  private_key.decrypt(padding, &decoded)?;
+    let decrypted = private_key.decrypt(padding, &decoded)?;
     Ok(serde_json::from_str(&String::from_utf8(decrypted)?)?)
 }
 

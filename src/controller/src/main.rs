@@ -16,9 +16,8 @@ struct Opts {
 #[derive(Clap)]
 enum SubCommand {
     Host(host::Host),
-    Pki(pki::Pki)
+    Pki(pki::Pki),
 }
-
 
 fn main() {
     let opts: Opts = Opts::parse();
@@ -34,7 +33,6 @@ fn main() {
 
     match opts.subcmd {
         SubCommand::Host(host) => host::process(host),
-        SubCommand::Pki(command) => pki::process(command)
+        SubCommand::Pki(command) => pki::process(command),
     }
-
 }

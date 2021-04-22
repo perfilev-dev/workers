@@ -1,8 +1,8 @@
 use clap::Clap;
-use std::fs::read;
 use rsa::RSAPublicKey;
-use shared::utils;
 use shared::api::{Api, UploadParameters};
+use shared::utils;
+use std::fs::read;
 
 #[derive(Clap)]
 pub struct Host {
@@ -23,11 +23,10 @@ enum HostSubCommand {
 struct Upload {
     #[clap(short, long)]
     key: String,
-    path: String
+    path: String,
 }
 
 impl Host {
-
     // upload binary
     pub fn update(&self, pub_key_path: &str, path: &str) {
         let bytes = read(path).unwrap();
@@ -38,17 +37,16 @@ impl Host {
         let api = Api::new(&self.host, self.port.unwrap_or(8000), false);
         api.upload_binary(UploadParameters {
             base64: base64::encode(&bytes),
-            sign: utils::get_sign(&bytes, &pub_key).unwrap()
-        }).unwrap();
+            sign: utils::get_sign(&bytes, &pub_key).unwrap(),
+        })
+        .unwrap();
 
         println!("successfully uploaded binary!");
     }
-
 }
-
 
 pub fn process(host: Host) {
     match &host.subcmd {
-        HostSubCommand::Upload(args) => host.update(&args.key, &args.path)
+        HostSubCommand::Upload(args) => host.update(&args.key, &args.path),
     }
 }

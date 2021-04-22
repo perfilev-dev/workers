@@ -1,9 +1,9 @@
 use rand::rngs::OsRng;
 use std::sync::Mutex;
 
-use rsa::{PublicKey, RSAPrivateKey, RSAPublicKey, PaddingScheme};
-use serde::Serialize;
+use rsa::{PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey};
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 
 use shared::error::*;
 
@@ -17,10 +17,16 @@ lazy_static! {
     };
 }
 
-pub fn encrypt<T>(data: T) -> Result<String>  where T: Serialize {
+pub fn encrypt<T>(data: T) -> Result<String>
+where
+    T: Serialize,
+{
     shared::utils::encrypt(data, &KEY.lock().unwrap().1)
 }
 
-pub fn decrypt<T>(data: &str) -> Result<T> where T: DeserializeOwned {
+pub fn decrypt<T>(data: &str) -> Result<T>
+where
+    T: DeserializeOwned,
+{
     shared::utils::decrypt(data, &KEY.lock().unwrap().0)
 }

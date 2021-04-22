@@ -1,6 +1,6 @@
-use std::time::{SystemTime, Duration};
+use serde::{Deserialize, Serialize};
 use std::ops::Add;
-use serde::{Serialize, Deserialize};
+use std::time::{Duration, SystemTime};
 
 #[derive(Serialize, Deserialize)]
 pub struct ExpiringData {
@@ -9,16 +9,14 @@ pub struct ExpiringData {
 }
 
 impl ExpiringData {
-
     pub fn new(data: &str, ttl: Duration) -> ExpiringData {
         ExpiringData {
             data: data.to_string(),
-            expires_on: SystemTime::now().add(ttl)
+            expires_on: SystemTime::now().add(ttl),
         }
     }
 
     pub fn is_expired(&self) -> bool {
         self.expires_on < SystemTime::now()
     }
-
 }
