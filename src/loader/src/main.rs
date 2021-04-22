@@ -12,12 +12,7 @@ use std::str::FromStr;
 fn main() {
     let mut api_client = Api::new("localhost", 8000, false);
 
-    let challenge_response = api_client.get_challenge().unwrap();
-    let solution = challenge_response.challenge.solve();
-    api_client.token = api_client
-        .register(challenge_response, solution)
-        .unwrap()
-        .token;
+    api_client.login().unwrap();
 
     let upload = api_client.client_download().unwrap();
 

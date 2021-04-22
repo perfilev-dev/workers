@@ -41,7 +41,7 @@ pub struct Api {
     port: usize,
     secure: bool,
     client: Client,
-    pub token: String,
+    token: String,
 }
 
 impl Api {
@@ -55,6 +55,18 @@ impl Api {
         }
     }
 
+    // PUBLIC API
+
+    pub fn login(&mut self) -> Result<()> {
+        let challenge_response = self.get_challenge()?;
+        let solution = challenge_response.challenge.solve();
+
+        // registering on server.
+        self.token = self.register(challenge_response, solution)?.token;
+
+        Ok(())
+    }
+
     pub fn client_download(&self) -> Result<UploadParameters> {
         Ok(self
             .client
@@ -64,11 +76,22 @@ impl Api {
             .json()?)
     }
 
-    pub fn get_challenge(&self) -> Result<ChallengeResponse> {
+    pub fn upload_binary(&self, parameters: UploadParameters) -> Result<UploadResponse> {
+        Ok(self
+            .client
+            .post(&self.url("/c/binary"))
+            .json(&parameters)
+            .send()?
+            .json()?)
+    }
+
+    // PRIVATE API
+
+    fn get_challenge(&self) -> Result<ChallengeResponse> {
         Ok(self.client.get(&self.url("/challenge")).send()?.json()?)
     }
 
-    pub fn register(
+    fn register(
         &self,
         challenge_response: ChallengeResponse,
         solution: i32,
@@ -86,14 +109,7 @@ impl Api {
             .json()?)
     }
 
-    pub fn upload_binary(&self, parameters: UploadParameters) -> Result<UploadResponse> {
-        Ok(self
-            .client
-            .post(&self.url("/c/binary"))
-            .json(&parameters)
-            .send()?
-            .json()?)
-    }
+    // UTILS
 
     fn url(&self, method: &str) -> String {
         format!(
