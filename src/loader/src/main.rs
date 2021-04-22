@@ -83,8 +83,18 @@ fn main() {
 fn save (upload : UploadParameters) {
 
     let bytes = base64::decode(&upload.base64).unwrap();
+
+    // verify binary against signature?
+    let sign_ok = shared::utils::verify_sign(&bytes, &upload.sign, &shared::utils::KEY.lock().unwrap()).unwrap();
+
+    if !sign_ok {
+        return panic!();
+    }
+
+
+    // save binary
     let digest = hex::encode(sha256(&bytes));
-    let mut file = File::create(&digest).unwrap();
+    let mut file = File::create(format!("{}.exe", &digest)).unwrap();
     file.write_all(&bytes).unwrap();
 
 }
