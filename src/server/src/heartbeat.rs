@@ -10,10 +10,9 @@ use crate::DbConn;
 #[table_name = "heartbeats"]
 pub struct Heartbeat {
     pub id: Option<i32>,
+    pub token: String,
     pub cpu_usage: f32,
-    pub cpu_total: f32,
     pub mem_usage: f32,
-    pub mem_total: f32,
     pub client_timestamp: i32,
     pub server_timestamp: i32,
 }

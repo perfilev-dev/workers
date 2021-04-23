@@ -6,9 +6,17 @@ CREATE TABLE tokens (
 
 CREATE TABLE heartbeats (
     id INTEGER NOT NULL PRIMARY KEY,
+    token VARCHAR(64) NOT NULL UNIQUE,
     cpu_usage FLOAT NOT NULL,
-    cpu_total FLOAT NOT NULL,
     mem_usage FLOAT NOT NULL,
+    client_timestamp INTEGER NOT NULL,
+    server_timestamp INTEGER NOT NULL
+);
+
+CREATE TABLE workers (
+    id INTEGER NOT NULL PRIMARY KEY,
+    token VARCHAR(64) NOT NULL UNIQUE,
+    cpu_total FLOAT NOT NULL,
     mem_total FLOAT NOT NULL,
     client_timestamp INTEGER NOT NULL,
     server_timestamp INTEGER NOT NULL

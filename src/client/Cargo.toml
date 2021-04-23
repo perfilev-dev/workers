@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 lazy_static = "1.4.0"
 shared = { path="../shared" }
+systemstat = "0.1.7"

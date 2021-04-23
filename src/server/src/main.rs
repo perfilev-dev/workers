@@ -11,7 +11,7 @@ extern crate lazy_static;
 
 use std::fs;
 use std::path::Path;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use rocket::response::status::BadRequest;
 use rocket_contrib::json::{Json, JsonValue};
@@ -19,6 +19,7 @@ use rocket_contrib::json::{Json, JsonValue};
 use binaries::Binary;
 use expiring::ExpiringData;
 use heartbeat::Heartbeat;
+use worker::Worker;
 use shared::utils::sha256;
 use shared::{api::*, challenge::Challenge};
 use std::fs::{read, File};
@@ -32,6 +33,7 @@ mod heartbeat;
 mod schema;
 mod secret;
 mod tokens;
+mod worker;
 
 #[database("sqlite_database")]
 pub struct DbConn(diesel::SqliteConnection);
@@ -105,6 +107,19 @@ fn register(
     let expiring2 = ExpiringData::new(&Challenge::new().bytes, ttl);
     let token = secret::encrypt(expiring2).map_err(|e| BadRequest(Some(e.to_string())))?;
 
+    // save worker in db!
+    Worker::insert(Worker {
+        id: None,
+        token: token.to_string(),
+        cpu_total: req.cpu_total,
+        mem_total: req.mem_total,
+        client_timestamp: req.timestamp,
+        server_timestamp: SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i32
+    }, con).map_err(|e| BadRequest(Some(e.to_string())))?;;
+
     Ok(Json(RegisterResponse { token }))
 }
 
@@ -134,11 +149,20 @@ fn client_download(con: DbConn) -> Result<Json<UploadParameters>, BadRequest<Str
 }
 
 #[post("/w/heartbeat", format = "json", data = "<hb>")]
-fn heartbeat(hb: Json<Heartbeat>, con: DbConn) -> JsonValue {
-    match Heartbeat::insert(hb.0, con) {
-        Ok(s) => json!({"status": "ok", "size": s}),
-        Err(err) => json!({"status": "error", "error": err.to_string()}),
-    }
+fn heartbeat(hb: Json<HeartbeatParameters>, con: DbConn) -> Result<Json<HeartbeatResponse>, BadRequest<String>> {
+    Heartbeat::insert(Heartbeat {
+        id: None,
+        token: hb.token.to_string(),
+        cpu_usage: hb.cpu_usage,
+        mem_usage: hb.mem_usage,
+        client_timestamp: hb.timestamp,
+        server_timestamp: SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i32
+    }, con).map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    Ok(Json(HeartbeatResponse { success: true }))
 }
 
 ///
@@ -192,6 +216,7 @@ fn heartbeats(con: DbConn) -> JsonValue {
 
 #[get("/error?<message>")]
 fn error(message: String) -> BadRequest<String> {
+    println!("error: {}", message);
     BadRequest(Some(message))
 }
 

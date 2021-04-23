@@ -2,6 +2,7 @@ use crate::challenge::Challenge;
 use crate::error::*;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Deserialize, Serialize)]
 pub struct ChallengeResponse {
@@ -18,6 +19,9 @@ pub struct ClientInfo {
 pub struct RegisterParameters {
     pub solution: i32,
     pub token: String,
+    pub cpu_total: f32,
+    pub mem_total: f32,
+    pub timestamp: i32
 }
 
 #[derive(Deserialize, Serialize)]
@@ -34,6 +38,24 @@ pub struct UploadParameters {
 #[derive(Deserialize, Serialize)]
 pub struct UploadResponse {
     pub sha256: String,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct HeartbeatParameters {
+    pub token: String, // todo: remove from here!
+    pub cpu_usage: f32,
+    pub mem_usage: f32,
+    pub timestamp: i32
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct HeartbeatResponse {
+    pub success: bool
+}
+
+pub struct SystemInfo {
+    pub cpu_total: f32,
+    pub mem_total: f32,
 }
 
 pub struct Api {
@@ -57,12 +79,16 @@ impl Api {
 
     // PUBLIC API
 
-    pub fn login(&mut self) -> Result<()> {
+    pub fn token(&mut self) -> String {
+        self.token.to_string()
+    }
+
+    pub fn login(&mut self, info: &SystemInfo) -> Result<()> {
         let challenge_response = self.get_challenge()?;
         let solution = challenge_response.challenge.solve();
 
         // registering on server.
-        self.token = self.register(challenge_response, solution)?.token;
+        self.token = self.register(challenge_response, solution, info)?.token;
 
         Ok(())
     }
@@ -85,6 +111,16 @@ impl Api {
             .json()?)
     }
 
+    pub fn send_heartbeat(&self, parameters: HeartbeatParameters) -> Result<HeartbeatResponse> {
+        Ok(self
+            .client
+            .post(&self.url("/w/heartbeat"))
+            .header("token", &self.token)
+            .json(&parameters)
+            .send()?
+            .json()?)
+    }
+
     // PRIVATE API
 
     fn get_challenge(&self) -> Result<ChallengeResponse> {
@@ -95,9 +131,16 @@ impl Api {
         &self,
         challenge_response: ChallengeResponse,
         solution: i32,
+        info: &SystemInfo
     ) -> Result<RegisterResponse> {
         let register_request = RegisterParameters {
             token: challenge_response.token,
+            cpu_total: info.cpu_total,
+            mem_total: info.mem_total,
+            timestamp: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as i32,
             solution,
         };
 

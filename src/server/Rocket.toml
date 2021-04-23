@@ -1,2 +1,5 @@
+[global]
+limits = { json = 33554432 }
+
 [global.databases.sqlite_database]
 url = "db/db.sqlite"
