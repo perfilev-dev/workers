@@ -6,7 +6,7 @@ CREATE TABLE tokens (
 
 CREATE TABLE heartbeats (
     id INTEGER NOT NULL PRIMARY KEY,
-    token VARCHAR(64) NOT NULL UNIQUE,
+    token VARCHAR(64) NOT NULL,
     cpu_usage FLOAT NOT NULL,
     mem_usage FLOAT NOT NULL,
     client_timestamp INTEGER NOT NULL,

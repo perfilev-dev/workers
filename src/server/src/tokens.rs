@@ -95,6 +95,7 @@ impl Fairing for TokenFairing {
                     let con = self.con.lock().unwrap();
                     if !e.is_expired() {
                         if let Some(c) = con.as_ref() {
+                            let t = Token::find(&e.data, c);
                             if Token::find(&e.data, c).unwrap_or(1) < 1 {
                                 return; // not expired and not revoked!
                             }

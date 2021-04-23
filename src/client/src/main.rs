@@ -4,18 +4,22 @@ extern crate lazy_static;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::ops::Add;
 use std::thread::sleep;
+use std::env::current_exe;
+use std::fs::read;
 
 use systemstat::{System, Platform, saturating_sub_bytes, DelayedMeasurement};
 
 use shared::api::*;
 use shared::error::*;
+use shared::utils;
+use std::fmt::Error;
 
 lazy_static! {
 
     // how often update will be checked
     static ref CHECK_UPDATE_TIMEOUT: Duration = {
         let secs = if cfg!(debug_assertions) {
-            60
+            10
         } else {
             3600
         };
@@ -34,12 +38,42 @@ lazy_static! {
         Duration::from_secs(secs)
     };
 
+    // own sha256
+    static ref OWN_SHA256: String = {
+        let path = current_exe().unwrap();
+        let digest = utils::sha256(&read(path).unwrap());
+        hex::encode(&digest)
+    };
+
 }
 
-fn check_update(api: &mut Api) -> Result<()> {
+fn check_update(api: &mut Api) -> Result<bool> {
     println!("checking update...");
 
-    Ok(())
+    let info = api.client_info()?;
+    if info.sha256 != OWN_SHA256.as_ref() {
+        println!("downloading update...");
+
+        let binary = api.client_download()?;
+        let bytes = base64::decode(&binary.base64).unwrap();
+
+        // verify binary against signature?
+        let sign_ok =
+            shared::utils::verify_sign(&bytes, &binary.sign, &shared::utils::KEY.lock().unwrap())
+                .unwrap();
+
+        if !sign_ok {
+            println!("signature is wrong! skipping...");
+            return Err("wrong signature!".into());
+        }
+
+        // todo: save, run and return Ok()
+
+        println!("successful updated!");
+        return Ok(true); // successful update, need to terminate!
+    }
+
+    Ok(false) // no update
 }
 
 fn send_heartbeat(api: &mut Api) -> Result<()> {
@@ -78,7 +112,11 @@ fn main_loop(api: &mut Api) -> Result<()> {
         // checking update...
         if SystemTime::now() > next_check_update {
             next_check_update = SystemTime::now().add(CHECK_UPDATE_TIMEOUT.clone());
-            check_update(api)?;
+            let updated = check_update(api)?;
+            if updated {
+                println!("terminating...");
+                return Ok(());
+            }
         }
 
         // sending heartbeat...

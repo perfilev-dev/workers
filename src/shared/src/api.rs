@@ -93,6 +93,15 @@ impl Api {
         Ok(())
     }
 
+    pub fn client_info(&self) -> Result<ClientInfo> {
+        Ok(self
+            .client
+            .get(&self.url("/w/client/info"))
+            .header("token", &self.token)
+            .send()?
+            .json()?)
+    }
+
     pub fn client_download(&self) -> Result<UploadParameters> {
         Ok(self
             .client
