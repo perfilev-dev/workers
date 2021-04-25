@@ -297,6 +297,7 @@ dependencies = [
  "hex",
  "lazy_static",
  "shared",
+ "sysinfo",
  "systemstat",
 ]
 
@@ -2685,6 +2686,15 @@ dependencies = [
  "quote 1.0.9",
  "syn 1.0.69",
  "unicode-xid 0.2.1",
+]
+
+[[package]]
+name = "sysinfo"
+version = "0.3.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "953067ed3a538fd8e5fe4a6b4ddbbdedd348a3421f8a3b2aa97f2ca06f8ea57e"
+dependencies = [
+ "libc",
 ]
 
 [[package]]

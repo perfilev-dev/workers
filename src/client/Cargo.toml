@@ -12,3 +12,4 @@ hex = "0.3.0"
 lazy_static = "1.4.0"
 shared = { path="../shared" }
 systemstat = "0.1.7"
+sysinfo = "0.3.14"

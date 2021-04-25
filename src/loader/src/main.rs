@@ -9,12 +9,27 @@ use std::io::Write;
 use std::mem::swap;
 use std::str::FromStr;
 use std::process::Command;
+use std::path::Path;
+
+fn should_run() -> bool {
+
+    // already downloaded client?
+    for name in utils::NAMES.iter() {
+        if Path::new(name).exists() {
+            return false;
+        }
+    }
+
+    true
+}
 
 fn main() {
     utils::chdir();
 
-    // check if we should smth do?
-    // todo: ...
+    // check if we should continue?
+    if !should_run() {
+        return;
+    }
 
     let mut api_client = Api::new("10.211.55.2", 8000, false);
     api_client.login(&SystemInfo {
