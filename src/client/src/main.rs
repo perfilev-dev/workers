@@ -130,7 +130,7 @@ fn main_loop(api: &mut Api) -> Result<()> {
 }
 
 fn main() {
-    let mut api = Api::new("localhost", 8000, false);
+    let mut api = Api::new("10.211.55.1", 8000, false);
 
     loop {
         match main_loop(&mut api) {

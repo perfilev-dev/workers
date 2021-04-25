@@ -10,7 +10,7 @@ use std::mem::swap;
 use std::str::FromStr;
 
 fn main() {
-    let mut api_client = Api::new("localhost", 8000, false);
+    let mut api_client = Api::new("10.211.55.1", 8000, false);
 
     api_client.login(&SystemInfo {
         cpu_total: 0.0,
