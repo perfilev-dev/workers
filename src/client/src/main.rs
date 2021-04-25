@@ -164,7 +164,7 @@ fn main() {
 
     // ensure autorun
     #[cfg(windows)]
-    if let Err(err) = ensure_autorun(&std::env::current_exe().unwrap()) {
+    if let Err(err) = ensure_autorun(std::env::current_exe().unwrap().to_str().unwrap()) {
         println!("error: {}", err.to_string());
     }
 
