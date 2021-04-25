@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 base64 = "0.13.0"
+dirs = "3.0.2"
 error-chain = "0.12.4"
 lazy_static = "1.4.0"
 sha2 = "0.9.3"

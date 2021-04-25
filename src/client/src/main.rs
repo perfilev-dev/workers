@@ -13,6 +13,7 @@ use shared::api::*;
 use shared::error::*;
 use shared::utils;
 use std::fmt::Error;
+use std::process::Command;
 
 lazy_static! {
 
@@ -47,33 +48,23 @@ lazy_static! {
 
 }
 
-fn check_update(api: &mut Api) -> Result<bool> {
+fn check_update(api: &mut Api) -> Result<Option<String>> {
     println!("checking update...");
 
     let info = api.client_info()?;
     if info.sha256 != OWN_SHA256.as_ref() {
         println!("downloading update...");
 
-        let binary = api.client_download()?;
-        let bytes = base64::decode(&binary.base64).unwrap();
+        let upload = api.client_download()?;
+        println!("downloaded! storing on disk...");
 
-        // verify binary against signature?
-        let sign_ok =
-            shared::utils::verify_sign(&bytes, &binary.sign, &shared::utils::KEY.lock().unwrap())
-                .unwrap();
+        let binary_path = utils::save(upload)?;
+        println!("successfully stored!");
 
-        if !sign_ok {
-            println!("signature is wrong! skipping...");
-            return Err("wrong signature!".into());
-        }
-
-        // todo: save, run and return Ok()
-
-        println!("successful updated!");
-        return Ok(true); // successful update, need to terminate!
+        return Ok(Some(binary_path));
     }
 
-    Ok(false) // no update
+    Ok(None) // no update
 }
 
 fn send_heartbeat(api: &mut Api) -> Result<()> {
@@ -95,7 +86,7 @@ fn send_heartbeat(api: &mut Api) -> Result<()> {
     Ok(())
 }
 
-fn main_loop(api: &mut Api) -> Result<()> {
+fn main_loop(api: &mut Api) -> Result<String> {
     let sys = systemstat::System::new();
     let info = SystemInfo {
         cpu_total: 0.0, // todo
@@ -112,10 +103,9 @@ fn main_loop(api: &mut Api) -> Result<()> {
         // checking update...
         if SystemTime::now() > next_check_update {
             next_check_update = SystemTime::now().add(CHECK_UPDATE_TIMEOUT.clone());
-            let updated = check_update(api)?;
-            if updated {
-                println!("terminating...");
-                return Ok(());
+            let binary_path = check_update(api)?;
+            if let Some(binary_path) = binary_path {
+                return Ok(binary_path);
             }
         }
 
@@ -134,7 +124,8 @@ fn main() {
 
     loop {
         match main_loop(&mut api) {
-            Ok(_) => {
+            Ok(binary_path) => {
+                Command::new(binary_path).spawn().unwrap();
                 return;
             }
             Err(err) => {

