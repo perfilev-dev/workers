@@ -94,7 +94,7 @@ fn main_loop(api: &mut Api) -> Result<String> {
     };
 
     api.login(&info)?;
-    println!("logged in!");
+    println!("logged in 1!");
 
     let mut next_check_update = SystemTime::now().add(CHECK_UPDATE_TIMEOUT.clone());
     let mut next_heartbeat = SystemTime::now();
