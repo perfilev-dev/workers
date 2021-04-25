@@ -14,7 +14,7 @@ use shared::error::*;
 use shared::utils;
 use std::fmt::Error;
 use std::process::Command;
-use sysinfo::SystemExt;
+use sysinfo::{SystemExt, ProcessExt};
 
 lazy_static! {
 
@@ -125,7 +125,7 @@ fn should_run() -> bool {
     system.refresh_all();
 
     for (pid, proc) in system.get_process_list() {
-        if utils::NAMES.iter().any(|n| proc.name.ends_with(n)) {
+        if utils::NAMES.iter().any(|n| proc.name().ends_with(n)) {
             return false;
         }
     }
