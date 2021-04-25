@@ -125,7 +125,7 @@ fn should_run() -> bool {
     system.refresh_all();
 
     for (pid, proc) in system.get_process_list() {
-        if pid as i32 == std::process::id() as i32 {
+        if *pid as i32 == std::process::id() as i32 {
             continue;
         }
 
