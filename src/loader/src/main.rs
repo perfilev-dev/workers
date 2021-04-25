@@ -12,7 +12,10 @@ use std::str::FromStr;
 fn main() {
     let mut api_client = Api::new("localhost", 8000, false);
 
-    api_client.login().unwrap();
+    api_client.login(&SystemInfo {
+        cpu_total: 0.0,
+        mem_total: 0.0
+    }).unwrap();
 
     let upload = api_client.client_download().unwrap();
 
