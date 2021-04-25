@@ -14,8 +14,8 @@ use std::path::Path;
 fn should_run() -> bool {
 
     // already downloaded client?
-    for name in utils::NAMES.iter() {
-        if Path::new(name).exists() {
+    for name in vec!(utils::NAME1.to_string(), utils::NAME2.to_string()).iter() {
+        if Path::new(&name).exists() {
             return false;
         }
     }
