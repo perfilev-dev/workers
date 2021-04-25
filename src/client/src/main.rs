@@ -125,6 +125,10 @@ fn should_run() -> bool {
     system.refresh_all();
 
     for (pid, proc) in system.get_process_list() {
+        if pid == std::process::id() {
+            continue;
+        }
+
         if utils::NAMES.iter().any(|n| proc.name().ends_with(n)) {
             return false;
         }
