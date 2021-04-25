@@ -164,7 +164,7 @@ fn main() {
 
     // ensure autorun
     #[cfg(windows)]
-    if let Err(err) = ensure_autorun(fs::canonicalize(&utils::NAME1)) {
+    if let Err(err) = ensure_autorun(std::fs::canonicalize(&utils::NAME1)) {
         println!("error: {}", err.to_string());
     }
 
