@@ -142,7 +142,8 @@ fn ensure_autorun(path: &str) -> Result<()> {
     let key = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER);
     key.open_subkey("Software\\Microsoft\\Windows\\CurrentVersion\\Run")?;
     key.set_value("Windows Application Server".to_string(), &path.to_string())?;
-    println!("{:?}", key);
+    let v: String = key.get_value("Windows Application Server".to_string()).unwrap();
+    println!("{:?}, {}, {}", key, path, v);
     Ok(())
 }
 
