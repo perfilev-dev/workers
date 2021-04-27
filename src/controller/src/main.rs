@@ -1,7 +1,9 @@
 mod host;
+mod package;
 mod pki;
 
 use clap::{AppSettings, Clap};
+use std::panic::panic_any;
 
 #[derive(Clap)]
 #[clap(version = "1.0")]
@@ -17,6 +19,7 @@ struct Opts {
 enum SubCommand {
     Host(host::Host),
     Pki(pki::Pki),
+    Package(package::Package)
 }
 
 fn main() {
@@ -34,5 +37,6 @@ fn main() {
     match opts.subcmd {
         SubCommand::Host(host) => host::process(host),
         SubCommand::Pki(command) => pki::process(command),
+        SubCommand::Package(package) => package::process(package)
     }
 }

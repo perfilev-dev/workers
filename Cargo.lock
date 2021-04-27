@@ -1360,6 +1360,7 @@ dependencies = [
  "base64 0.13.0",
  "hex",
  "reqwest 0.11.3",
+ "rsa",
  "serde",
  "sha2",
  "shared",

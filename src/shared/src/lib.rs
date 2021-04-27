@@ -7,3 +7,5 @@ pub mod api;
 pub mod challenge;
 pub mod error;
 pub mod utils;
+
+pub static PREFIX: &'static str = "\x13\x37";
