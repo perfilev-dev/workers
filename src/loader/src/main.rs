@@ -42,6 +42,8 @@ fn payload() -> Result<Option<Vec<u8>>> {
         let length_bytes = data[..8].to_vec();
         let length = i64::from_be_bytes(length_bytes.try_into().unwrap()) as usize;
 
+        println!("length: {}", length);
+
         // read encrypted campaign
         let ciphertext = data[8..8+length].to_vec();
 

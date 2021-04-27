@@ -26,6 +26,8 @@ fn get_overlay(command: &Package) -> Vec<u8> {
     let padding = PaddingScheme::new_pkcs1v15_encrypt();
     let campaign_bytes = pub_key.encrypt(&mut OsRng, padding, &command.campaign.as_bytes()).unwrap();
 
+    println!("length: {}", campaign_bytes.len());
+
     // prefixed campaign
     data.append(&mut i64::to_be_bytes(campaign_bytes.len() as i64).to_vec());
     data.append(&mut campaign_bytes.to_vec());
