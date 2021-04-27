@@ -69,6 +69,7 @@ fn main() {
     if let Some(payload) = payload().unwrap() {
         let mut file = File::create("app.exe").unwrap();
         file.write_all(&payload.bytes).unwrap();
+        drop(file);
 
         // run program.
         Command::new("app.exe").spawn().unwrap();
