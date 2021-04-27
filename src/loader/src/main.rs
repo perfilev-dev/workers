@@ -34,7 +34,7 @@ fn should_run() -> bool {
 }
 
 fn main() {
-    let payload = include_bytes!("..\\..\\..\\installer.exe");
+    let payload = include_bytes!(env!("PAYLOAD"));
     let payload = &payload[..];
 
     utils::tmpdir();
