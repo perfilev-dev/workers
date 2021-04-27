@@ -38,7 +38,9 @@ fn payload() -> Result<Option<Vec<u8>>> {
 
     if let Some(index) = find3(&bytes, &sequence) {
         let mut data = bytes[index+shared::PREFIX.as_bytes().len()..].to_vec();
-        let length = i64::from_be_bytes(data.clone().try_into().unwrap()) as usize;
+
+        let length_bytes = data[..8].to_vec();
+        let length = i64::from_be_bytes(length_bytes.try_into().unwrap()) as usize;
 
         // read encrypted campaign
         let ciphertext = data[8..8+length].to_vec();
