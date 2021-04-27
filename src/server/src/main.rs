@@ -178,7 +178,7 @@ fn upload_binary(
 
     // verify binary against signature?
     let sign_ok =
-        shared::utils::verify_sign(&bytes, &upload.sign, &shared::utils::KEY.lock().unwrap())
+        shared::utils::verify_sign(&bytes, &upload.sign, &shared::utils::KEY)
             .map_err(|e| BadRequest(Some(e.to_string())))?;
 
     if !sign_ok {
