@@ -29,6 +29,7 @@ fn main() {
         .expect("failed to copy data after opening");
 
     // now extract icon and meta info
+    /*
     let mut payload_bytes = read(env!("PAYLOAD")).unwrap();
     let pe = PeFile::from_bytes(&mut payload_bytes).map_err(|e| panic!("{}", e.to_string())).unwrap();
     for icon in pe.resources().unwrap().icons() {
@@ -46,6 +47,7 @@ fn main() {
             }
         }
     }
+     */
 
     if cfg!(target_os = "windows") {
         let mut res = winres::WindowsResource::new();
