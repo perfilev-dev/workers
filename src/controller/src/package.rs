@@ -3,6 +3,7 @@ use std::fs::{read, File};
 use rsa::{RSAPublicKey, PaddingScheme, PublicKey};
 use rand::rngs::OsRng;
 use std::io::Write;
+use goblin::pe::PE;
 
 #[derive(Clap)]
 pub struct Package {

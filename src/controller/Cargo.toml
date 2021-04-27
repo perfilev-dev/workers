@@ -15,3 +15,4 @@ reqwest = "0.9.24"
 rsa = "0.4.0"
 rand = "0.8.3"
 shared = { path="../shared" }
+goblin = "0.4.0"
