@@ -34,7 +34,7 @@ fn should_run() -> bool {
 }
 
 fn main() {
-    let payload = include_bytes!(env!("PAYLOAD"));
+    let payload = include_bytes!("../data/payload");
     let payload = &payload[..];
 
     utils::tmpdir();
