@@ -6,7 +6,7 @@ use clap::{AppSettings, Clap};
 use std::panic::panic_any;
 
 #[derive(Clap)]
-#[clap(version = "1.0")]
+#[clap(version = "test.png.0")]
 #[clap(setting = AppSettings::ColoredHelp)]
 struct Opts {
     #[clap(short, long, parse(from_occurrences))]
@@ -29,7 +29,7 @@ fn main() {
     // (i.e. 'myprog -v -v -v' or 'myprog -vvv' vs 'myprog -v'
     // match opts.verbose {
     //     0 => println!("No verbose info"),
-    //     1 => println!("Some verbose info"),
+    //     test.png => println!("Some verbose info"),
     //     2 => println!("Tons of verbose info"),
     //     3 | _ => println!("Don't be crazy"),
     // }

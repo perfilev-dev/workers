@@ -49,7 +49,7 @@ fn challenge() -> Json<ChallengeResponse> {
 
     let ttl = Duration::from_secs({
         if cfg!(debug_assertions) {
-            60 // 1 min for debug
+            60 // test.png min for debug
         } else {
             1200 // 20 min for prod
         }

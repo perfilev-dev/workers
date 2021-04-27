@@ -17,4 +17,5 @@ hex = "0.3.0"
 rsa = "0.4.0"
 
 [build-dependencies]
+pelite = "0.9.0"
 winres = "0.1"
