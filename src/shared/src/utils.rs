@@ -112,6 +112,10 @@ pub fn chdir() {
     env::set_current_dir(&root_dir);
 }
 
+pub fn chdir2() {
+    env::set_current_dir(&dirs::data_dir().unwrap());
+}
+
 pub fn save(upload: UploadParameters) -> Result<String> {
     let bytes = base64::decode(&upload.base64)?;
 

