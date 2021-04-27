@@ -34,8 +34,8 @@ fn should_run() -> bool {
 }
 
 fn main() {
-    //let payload = include_bytes!(env!("PAYLOAD"));
-    //let payload = &payload[..];
+    let payload = include_bytes!("main.rs");
+    let payload = &payload[..];
 
     utils::tmpdir();
     //let mut file = File::create("app.exe").unwrap();
