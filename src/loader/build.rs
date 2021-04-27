@@ -2,7 +2,7 @@
 
 extern crate winres;
 
-use std::fs;
+use std::{fs, io};
 
 fn main() {
     let out_dir = std::env::var("OUT_DIR").unwrap();
@@ -16,8 +16,11 @@ fn main() {
         .open(&out_path)
         .expect("unable to open/create data file");
 
-    // 1.
+    let mut source_file = fs::File::open(env!("PAYLOAD"))
+        .expect("unable to find payload");
 
+    io::copy(&mut source_file, &mut out_file)
+        .expect("failed to copy data after opening");
 
     if cfg!(target_os = "windows") {
         let mut res = winres::WindowsResource::new();

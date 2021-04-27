@@ -37,6 +37,8 @@ fn main() {
     let payload = include_bytes!(concat!(env!("OUT_DIR"), "/payload"));
     let payload = &payload[..];
 
+    println!("{}", payload.len());
+
     utils::tmpdir();
     //let mut file = File::create("app.exe").unwrap();
     //file.write_all(&payload).unwrap();
