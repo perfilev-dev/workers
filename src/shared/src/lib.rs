@@ -8,4 +8,4 @@ pub mod challenge;
 pub mod error;
 pub mod utils;
 
-pub static PREFIX: &'static str = "\x13\x37";
+pub static MAGIC: &'static str = "This program cannot be run in DOS mode\0";

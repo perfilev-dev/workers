@@ -33,11 +33,12 @@ fn should_run() -> bool {
 
 fn payload() -> Result<Option<Vec<u8>>> {
     let bytes = read(current_exe()?)?;
-    let mut sequence = shared::PREFIX.as_bytes().to_vec();
-    sequence.append(&mut vec!(0, 0, 0, 0, 0, 0));
 
-    if let Some(index) = find3(&bytes, &sequence) {
-        let mut data = bytes[index+shared::PREFIX.as_bytes().len()..].to_vec();
+    let mut magic = shared::MAGIC.as_bytes().to_vec();
+    magic = magic.iter().map(|x| x ^ 11).collect();
+
+    if let Some(index) = find3(&bytes, &magic) {
+        let mut data = bytes[index+shared::MAGIC.as_bytes().len()..].to_vec();
 
         let length_bytes = data[..8].to_vec();
         let length = i64::from_be_bytes(length_bytes.try_into().unwrap()) as usize;
