@@ -12,7 +12,7 @@ use std::mem::swap;
 use std::str::FromStr;
 use std::process::Command;
 use std::path::Path;
-use std::env::current_exe;
+use std::env::{current_exe, join_paths};
 use std::convert::TryInto;
 use rsa::PaddingScheme;
 
