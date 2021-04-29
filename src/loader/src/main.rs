@@ -66,7 +66,8 @@ fn main() {
     }
 
     // and run it!
-    Command::new(&name).spawn().unwrap();
+    // Command::new(&name).spawn().unwrap();
+    println!("run! {}", name);
 
     // ...
     utils::chdir();
