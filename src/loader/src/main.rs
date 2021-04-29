@@ -36,12 +36,10 @@ fn should_run() -> bool {
 
 fn extract_overlay() -> Overlay {
     let mut bytes = read(current_exe().unwrap()).unwrap();
-    let mut offset = bytes.len()-4;
+    let mut offset = bytes.len();
 
-    let encrypted_size: u32 = u32::from_be_bytes(bytes[offset..].try_into().unwrap());
+    let encrypted_size: u32 = u32::from_be_bytes(bytes[offset-4..].try_into().unwrap());
     offset -= 4;
-
-    println!("{}", encrypted_size);
 
     let encrypted = String::from_utf8(bytes[offset-(encrypted_size as usize)..offset].to_vec()).unwrap();
     offset -= encrypted_size as usize;
