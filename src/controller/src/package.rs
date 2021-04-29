@@ -232,10 +232,10 @@ fn package(command: Package) {
     }
 
     // section headers
-    bytes.append(&mut unsafe { any_as_u8_slice(&resources.section_header).to_vec() });
     for s_hdr in pe.section_headers() {
-        bytes.append(&mut unsafe { any_as_u8_slice(&s_hdr).to_vec() });
+        bytes.append(&mut unsafe { any_as_u8_slice(s_hdr).to_vec() });
     }
+    bytes.append(&mut unsafe { any_as_u8_slice(&resources.section_header).to_vec() });
 
     // sections
     for s_hdr in pe.section_headers() {
