@@ -144,11 +144,6 @@ fn get_overlay(command: &Package) -> Vec<u8> {
 
     // encrypt meta and also add to data
     let encrypted = shared::utils::encrypt(meta, &pub_key).unwrap();
-
-    let s = encrypted.as_bytes().to_vec();
-    let ee: OverlayMeta = shared::utils::decrypt(&String::from_utf8(s).unwrap(), &shared::utils::KEY).unwrap();
-
-    println!("{:?}", encrypted.as_bytes().to_vec());
     data.append(&mut encrypted.as_bytes().to_vec());
 
     // prefixed campaign
