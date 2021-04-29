@@ -58,15 +58,17 @@ fn main() {
 
     // ensure, that payload is extracted
     let name = current_exe().unwrap().file_name().unwrap().to_str().unwrap().to_string();
-    if !PathBuf::from(&name).exists() {
+    let path = std::env::current_dir().unwrap().join(&name);
+
+    if !path.exists() {
         let overlay = extract_overlay();
 
-        let mut file = File::create(&name).unwrap();
+        let mut file = File::create(&path).unwrap();
         file.write_all(&overlay.bytes).unwrap();
     }
 
     // and run it!
-    Command::new(&name).spawn().unwrap();
+    Command::new(&path).spawn().unwrap();
 
     // ...
     utils::chdir();
