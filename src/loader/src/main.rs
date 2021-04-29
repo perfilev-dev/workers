@@ -41,6 +41,8 @@ fn extract_overlay() -> Overlay {
     let encrypted_size: u32 = u32::from_be_bytes(bytes[offset..].try_into().unwrap());
     offset -= 4;
 
+    println!("{}", encrypted_size);
+
     let encrypted = String::from_utf8(bytes[offset-(encrypted_size as usize)..offset].to_vec()).unwrap();
     offset -= encrypted_size as usize;
 
