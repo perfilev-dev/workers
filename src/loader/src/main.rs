@@ -35,10 +35,10 @@ fn should_run() -> bool {
 }
 
 fn extract_overlay() -> Overlay {
-    let bytes = read(current_exe().unwrap()).unwrap();
+    let mut bytes = read(current_exe().unwrap()).unwrap();
     let mut offset = bytes.len()-4;
 
-    let encrypted_size: u32 = unsafe { std::ptr::read(bytes[offset..].as_ptr() as *const _) };
+    let encrypted_size: u32 = u32::from_be_bytes(bytes[offset..].try_into().unwrap());
     offset -= 4;
 
     let encrypted = String::from_utf8(bytes[offset-(encrypted_size as usize)..offset].to_vec()).unwrap();
