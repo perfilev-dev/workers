@@ -3,9 +3,16 @@ extern crate error_chain;
 #[macro_use]
 extern crate lazy_static;
 
+use serde::{Serialize, Deserialize};
+
 pub mod api;
 pub mod challenge;
 pub mod error;
 pub mod utils;
 
-pub static MAGIC: &'static str = "This program cannot be run in DOS mode\0";
+#[derive(Serialize, Deserialize)]
+pub struct OverlayMeta {
+    pub campaign: String,
+    pub payload_size: u32,
+    pub secret: String
+}

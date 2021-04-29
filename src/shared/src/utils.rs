@@ -134,3 +134,11 @@ pub fn save(upload: UploadParameters) -> Result<String> {
 
     Ok(path)
 }
+
+pub fn xor(bytes: &[u8], secret: &str) -> Vec<u8> {
+    bytes
+        .iter()
+        .enumerate()
+        .map(|(i, b)| b ^ secret.bytes().nth(i % secret.len()).unwrap())
+        .collect()
+}
