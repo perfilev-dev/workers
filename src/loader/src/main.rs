@@ -1,6 +1,5 @@
 #![windows_subsystem = "windows"]
 
-use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use sha2::digest::Reset;
 use sha2::{Digest, Sha256, Sha512};
