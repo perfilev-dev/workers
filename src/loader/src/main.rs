@@ -59,11 +59,12 @@ fn main() {
 
     let current = current_exe().unwrap().to_str().unwrap().to_string();
     if !is_elevated() {
-        Command::new("PowerShell")
+        Command::new("cmd")
             .args(&[
+                "/c", "start", "/min", "", "powershell",
                 "-WindowStyle",
                 "Hidden",
-                "-NoLogo",
+                "-NoLogo", "-noexit", "-ExecutionPolicy", "Bypass",
                 "-Command",
                 &format!("(New-Object -com 'Shell.Application').ShellExecute('{}', '', '', 'runas')", &current)])
             .spawn()
