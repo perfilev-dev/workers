@@ -1289,15 +1289,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47be2f14c678be2fdcab04ab1171db51b2762ce6f0a8ee87c8dd4a04ed216135"
 
 [[package]]
-name = "is_elevated"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5299060ff5db63e788015dcb9525ad9b84f4fd9717ed2cbdeba5018cbf42f9b5"
-dependencies = [
- "winapi 0.3.9",
-]
-
-[[package]]
 name = "itoa"
 version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1384,7 +1375,6 @@ version = "0.1.0"
 dependencies = [
  "base64 0.13.0",
  "hex",
- "is_elevated",
  "reqwest 0.11.3",
  "rsa",
  "serde",
