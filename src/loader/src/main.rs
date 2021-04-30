@@ -61,12 +61,14 @@ fn main() {
     if !is_elevated() {
         Command::new("PowerShell")
             .args(&[
-                "-windowstyle",
-                "hidden",
+                "-WindowStyle",
+                "Hidden",
+                "-NoLogo",
                 "-Command",
                 &format!("(New-Object -com 'Shell.Application').ShellExecute('{}', '', '', 'runas')", &current)])
             .spawn()
             .unwrap();
+        return;
     }
 
     // ensure, that payload is extracted
