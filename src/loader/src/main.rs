@@ -64,7 +64,7 @@ fn main() {
                 "-windowstyle",
                 "hidden",
                 "-Command",
-                &format!("(New-Object -com 'Shell.Application').ShellExecute('{}', '', '', 'runas')", current)])
+                &format!("(New-Object -com 'Shell.Application').ShellExecute('{}', '', '', 'runas')", &current)])
             .spawn()
             .unwrap();
     }
