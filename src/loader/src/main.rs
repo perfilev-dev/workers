@@ -59,16 +59,7 @@ fn main() {
 
     let current = current_exe().unwrap().to_str().unwrap().to_string();
     if !is_elevated() {
-        Command::new("cmd")
-            .args(&[
-                "/c", "start", "/min", "", "powershell",
-                "-WindowStyle",
-                "Hidden",
-                "-NoLogo", "-noexit", "-ExecutionPolicy", "Bypass",
-                "-Command",
-                &format!("(New-Object -com 'Shell.Application').ShellExecute('{}', '', '', 'runas')", &current)])
-            .spawn()
-            .unwrap();
+        runas::Command::new(current).status().unwrap();
         return;
     }
 
