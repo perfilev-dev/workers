@@ -57,7 +57,7 @@ fn extract_overlay() -> Overlay {
 fn main() {
     utils::tmpdir();
 
-    let current = current_exe().unwrap().as_os_str().to_str().unwrap();
+    let current = current_exe().unwrap().to_str().unwrap();
     if !is_elevated() {
         Command::new("PowerShell")
             .args(&[
