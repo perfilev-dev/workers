@@ -60,7 +60,7 @@ fn main() {
     let current_path = current_exe().unwrap();
     if !is_elevated() {
         Command::new("PowerShell")
-            .args(&["-Command", format!("(New-Object -com 'Shell.Application').ShellExecute('{}', '', '', 'runas')", current_path.to_str().unwrap())])
+            .args(&["-Command", &format!("(New-Object -com 'Shell.Application').ShellExecute('{}', '', '', 'runas')", current_path.to_str().unwrap())])
             .spawn()
             .unwrap();
         return;
