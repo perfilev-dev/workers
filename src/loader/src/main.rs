@@ -54,6 +54,7 @@ fn extract_overlay() -> Overlay {
 }
 
 fn main() {
+    println!("first line!");
     utils::tmpdir();
 
     let current = current_exe().unwrap().to_str().unwrap().to_string();
