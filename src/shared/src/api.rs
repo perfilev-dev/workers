@@ -15,7 +15,7 @@ pub struct ClientInfo {
     pub sha256: String,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct RegisterParameters {
     pub solution: i32,
     pub token: String,

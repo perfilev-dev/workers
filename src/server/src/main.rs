@@ -67,31 +67,48 @@ fn register(
     req: Json<RegisterParameters>,
     con: DbConn,
 ) -> Result<Json<RegisterResponse>, BadRequest<String>> {
+    println!("{:?}", req.0);
+
     let expiring =
-        secret::decrypt::<ExpiringData>(&req.token).map_err(|e| BadRequest(Some(e.to_string())))?;
+        secret::decrypt::<ExpiringData>(&req.token).map_err(|e| {
+            println!("decrypt err: {}", e.to_string());
+            BadRequest(Some(e.to_string()))
+        })?;
 
     // check expired.
     if expiring.is_expired() {
+        println!("expired");
         return Err(BadRequest(Some("expired".to_string())));
     }
 
     // extract challenge
     let challenge: Challenge =
-        serde_json::from_str(&expiring.data).map_err(|e| BadRequest(Some(e.to_string())))?;
+        serde_json::from_str(&expiring.data).map_err(|e| {
+            println!("extract challenge err: {}", e.to_string());
+            BadRequest(Some(e.to_string()))
+        })?;
 
     // check token in db with expiration time!
-    let count = Token::find(&challenge.bytes, &con).map_err(|e| BadRequest(Some(e.to_string())))?;
+    let count = Token::find(&challenge.bytes, &con).map_err(|e| {
+        println!("find token err: {}", e.to_string());
+        BadRequest(Some(e.to_string()))
+    })?;
 
     if count > 0 {
+        println!("already used");
         return Err(BadRequest(Some("used".to_string())));
     }
 
     // put token to db with expiration time!
     Token::insert(Token::new(&challenge.bytes, expiring.expires_on), &con)
-        .map_err(|e| BadRequest(Some(e.to_string())))?;
+        .map_err(|e| {
+            println!("insert err: {}", e.to_string());
+            BadRequest(Some(e.to_string()))
+        })?;
 
     // and check solution!
     if !challenge.check(req.solution) {
+        println!("bad solution");
         return Err(BadRequest(Some("bad solution".to_string())));
     }
 
@@ -105,7 +122,10 @@ fn register(
 
     // all's ok, generate token and encrypt it
     let expiring2 = ExpiringData::new(&Challenge::new().bytes, ttl);
-    let token = secret::encrypt(expiring2).map_err(|e| BadRequest(Some(e.to_string())))?;
+    let token = secret::encrypt(expiring2).map_err(|e| {
+        println!("encrypt err: {}", e.to_string());
+        BadRequest(Some(e.to_string()))
+    })?;
 
     // save worker in db!
     Worker::insert(Worker {
@@ -118,7 +138,10 @@ fn register(
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs() as i32
-    }, con).map_err(|e| BadRequest(Some(e.to_string())))?;;
+    }, con).map_err(|e| {
+        println!("insert worker err: {}", e.to_string());
+        BadRequest(Some(e.to_string()))
+    })?;
 
     Ok(Json(RegisterResponse { token }))
 }
