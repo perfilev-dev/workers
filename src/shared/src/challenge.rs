@@ -29,7 +29,7 @@ impl Challenge {
         if cfg!(debug_assertions) {
             result.ends_with(&i8::to_be_bytes(self.nonce as i8))
         } else {
-            result.ends_with(&i32::to_be_bytes(self.nonce))
+            result.ends_with(&i32::to_be_bytes(self.nonce)[1..])
         }
     }
 
