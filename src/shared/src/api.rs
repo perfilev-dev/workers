@@ -84,13 +84,13 @@ impl Api {
     }
 
     pub fn login(&mut self, info: &SystemInfo) -> Result<()> {
-        let challenge_response = self.get_challenge()?;
-        let solution = challenge_response.challenge.solve();
-
-        // registering on server.
-        self.token = self.register(challenge_response, solution, info)?.token;
-
-        Ok(())
+        loop {
+            let challenge_response = self.get_challenge()?;
+            if let Some(solution) = challenge_response.challenge.solve() {
+                self.token = self.register(challenge_response, solution, info)?.token;
+                return Ok(());
+            }
+        }
     }
 
     pub fn client_info(&self) -> Result<ClientInfo> {

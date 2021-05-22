@@ -29,17 +29,20 @@ impl Challenge {
         if cfg!(debug_assertions) {
             result.ends_with(&i8::to_be_bytes(self.nonce as i8))
         } else {
-            result.ends_with(&i32::to_be_bytes(self.nonce)[1..])
+            result.ends_with(&i32::to_be_bytes(self.nonce))
         }
     }
 
-    pub fn solve(&self) -> i32 {
+    pub fn solve(&self) -> Option<i32> {
         let mut i = 0;
         loop {
             if self.check(i) {
-                return i;
+                return Some(i);
             }
             i += 1;
+            if i == 0 {
+                return None;
+            }
         }
     }
 }
