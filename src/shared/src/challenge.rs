@@ -7,10 +7,11 @@ use sha2::{Digest, Sha256};
 pub struct Challenge {
     pub bytes: String,
     pub nonce: i32,
+    pub simple: bool
 }
 
 impl Challenge {
-    pub fn new() -> Challenge {
+    pub fn new(simple: bool) -> Challenge {
         Challenge {
             nonce: thread_rng().next_u32() as i32,
             bytes: thread_rng()
@@ -18,6 +19,7 @@ impl Challenge {
                 .take(32)
                 .map(char::from)
                 .collect(),
+            simple
         }
     }
 
@@ -29,7 +31,12 @@ impl Challenge {
         if cfg!(debug_assertions) {
             result.ends_with(&i8::to_be_bytes(self.nonce as i8))
         } else {
-            result.ends_with(&i32::to_be_bytes(self.nonce))
+            let offset = if self.simple {
+                1
+            } else {
+                0
+            };
+            result.ends_with(&i32::to_be_bytes(self.nonce)[offset..])
         }
     }
 

@@ -44,7 +44,7 @@ pub struct DbConn(diesel::SqliteConnection);
 
 #[get("/challenge")]
 fn challenge() -> Json<ChallengeResponse> {
-    let challenge = Challenge::new();
+    let challenge = Challenge::new(true);
     let serialized = serde_json::to_string(&challenge).unwrap();
 
     let ttl = Duration::from_secs({
@@ -121,7 +121,7 @@ fn register(
     });
 
     // all's ok, generate token and encrypt it
-    let expiring2 = ExpiringData::new(&Challenge::new().bytes, ttl);
+    let expiring2 = ExpiringData::new(&Challenge::new(true).bytes, ttl);
     let token = secret::encrypt(expiring2).map_err(|e| {
         println!("encrypt err: {}", e.to_string());
         BadRequest(Some(e.to_string()))
