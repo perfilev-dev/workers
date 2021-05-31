@@ -24,6 +24,8 @@ pub struct Package {
     #[clap(short, long)]
     loader: String,
     #[clap(short, long)]
+    host: String,
+    #[clap(short, long)]
     resources_from: Option<String>,
     executable: String,
 }
@@ -132,6 +134,7 @@ fn get_overlay(command: &Package) -> Vec<u8> {
     let meta = OverlayMeta {
         campaign: command.campaign.clone(),
         payload_size: bytes.len() as u32,
+        host: command.host.clone(),
         secret: thread_rng()
             .sample_iter(&Alphanumeric)
             .take(128)
