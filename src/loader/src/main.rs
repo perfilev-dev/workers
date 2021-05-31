@@ -60,7 +60,7 @@ fn main_result() -> Result<()> {
 
     #[cfg(windows)]
     {
-        let current = current_exe()?.to_str()?.to_string();
+        let current = current_exe().unwrap().to_str().unwrap().to_string();
         if !is_elevated() {
             runas::Command::new(current).status()?;
             return Err("not elevated".into());
