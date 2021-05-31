@@ -28,5 +28,6 @@ error_chain! {
         RsaError(::rsa::errors::Error);
         IoError(::std::io::Error);
         ReqwestError(::reqwest::Error);
+        TryFromSliceError(::std::array::TryFromSliceError);
     }
 }

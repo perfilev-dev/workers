@@ -14,5 +14,6 @@ pub mod utils;
 pub struct OverlayMeta {
     pub campaign: String,
     pub payload_size: u32,
-    pub secret: String
+    pub secret: String,
+    pub host: String
 }
